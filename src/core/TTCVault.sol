@@ -5,32 +5,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./TTC.sol";
 import "../types/Types.sol";
 import "./TTCMath.sol";
+import "../interface/ITTCVault.sol";
 
-contract TTCVault is TTC, TTCMath {
-    event ALL_JOIN (
-        address indexed sender,
-        uint256 iOut 
-    ); // iOut: index out
-
-    event ALL_EXIT (
-        address indexed sender,
-        uint256 iIn
-    ); // iIn: index in
-
-    event SINGLE_JOIN (
-        address indexed sender,
-        address indexed token,
-        uint256 iOut,
-        uint256 amountIn
-    );
-
-    event SINGLE_EXIT (
-        address indexed sender,
-        address indexed token,
-        uint256 iIn,
-        uint256 amountOut
-    );
-
+contract TTCVault is ITTCVault, TTC, TTCMath {
     modifier _lock_() {
         require(!_locked, "ERR_REENTRANCY");
         _locked = true;
