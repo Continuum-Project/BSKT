@@ -2,6 +2,7 @@
 pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import "./TTC.sol";
 import "../types/Types.sol";
 import "./TTCMath.sol";
@@ -35,11 +36,6 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
         _;
     }
 
-    modifier _shouldBeFirstJoin_() {
-        require(totalSupply() == 0, "ERR_NOT_FIRST_JOIN");
-        _;
-    }
-
     bool private _locked;
     Constituent[] public constituents;
 
@@ -52,8 +48,8 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
     function allJoin_Initial(TokenIO[] calldata tokens)
         external
         _lock_
-        _shouldBeFirstJoin_
     {
+        require(totalSupply() == 0, "ERR_NOT_FIRST_JOIN");
         _allJoin(tokens, 1); // mint 1 TTC, sets the initial price
     }
 
