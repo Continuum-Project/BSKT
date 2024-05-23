@@ -34,7 +34,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
     }
 
     modifier _supplyNonZero_() {
-        require(totalSupply() > 0, "ERR_FIRST_JOIN");
+        require(totalSupply() > 0, "ERR_SUPPLY_IS_ZERO");
         _;
     }
 
