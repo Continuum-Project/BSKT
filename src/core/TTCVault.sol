@@ -4,16 +4,24 @@ pragma solidity 0.8.20;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./TTC.sol";
 import "../types/Types.sol";
+import "./TTCMath.sol";
 
-contract TTCVault is TTC {
+contract TTCVault is TTC, TTCMath {
     event ALL_JOIN (
         address indexed sender,
-        uint256 out
-    );
+        uint256 iOut 
+    ); // iOut: index out
 
     event ALL_EXIT (
         address indexed sender,
-        uint256 inp
+        uint256 iIn
+    ); // iIn: index in
+
+    event SINGLE_JOIN (
+        address indexed sender,
+        address indexed token,
+        uint256 iOut,
+        uint256 amountIn
     );
 
     modifier _lock_() {
@@ -30,6 +38,11 @@ contract TTCVault is TTC {
 
     modifier _isLocked() {
         require(_locked, "ERR_NOT_LOCKED");
+        _;
+    }
+
+    modifier _positiveIn(uint256 _in) {
+        require(_in > 0, "ERR_ZERO_IN");
         _;
     }
 
@@ -52,11 +65,11 @@ contract TTCVault is TTC {
         external 
         _lock_
     {
-        uint256 propIn = out * BONE / totalSupply(); // the proportion of each token to deposit in order to get "out" amount
+        uint256 propIn = out * ONE / totalSupply(); // the proportion of each token to deposit in order to get "out" amount
         TokenIO[] memory tokensIn = new TokenIO[](constituents.length);
         for (uint256 i = 0; i < constituents.length; i++) {
             uint256 balance = IERC20(constituents[i].token).balanceOf(address(this));
-            tokensIn[i].amount = balance * propIn / BONE;
+            tokensIn[i].amount = balance * propIn / ONE;
             tokensIn[i].token = constituents[i].token;
         }
 
@@ -75,36 +88,80 @@ contract TTCVault is TTC {
     {
         uint256 minProp = type(uint256).max;
         for (uint256 i = 0; i < constituents.length; i++) {
-            uint256 prop = tokens[i].amount * BONE / ERC20(constituents[i].token).balanceOf(address(this));
+            uint256 prop = tokens[i].amount * ONE / ERC20(constituents[i].token).balanceOf(address(this));
             if (prop < minProp) {
                 minProp = prop;
             }
         }
 
-        uint256 out = totalSupply() * minProp / BONE;
+        uint256 out = totalSupply() * minProp / ONE;
 
         TokenIO[] memory tokensIn = new TokenIO[](constituents.length);
         for (uint256 i = 0; i < constituents.length; i++) {
-            tokensIn[i].amount = tokens[i].amount * ERC20(constituents[i].token).balanceOf(address(this)) / BONE;
+            tokensIn[i].amount = tokens[i].amount * ERC20(constituents[i].token).balanceOf(address(this)) / ONE;
             tokensIn[i].token = tokens[i].token;
         }
 
         _allJoin(tokensIn, out);
     }
 
-    function AllExit(uint256 _in) 
+    /*
+     * @notice all-tokens exit
+     * @param _in The amount of TTC to exit
+     */
+    function allExit(uint256 _in) 
         external 
         _lock_
     {
-        uint256 propOut = _in * BONE / totalSupply();
+        uint256 propOut = _in * ONE / totalSupply();
         TokenIO[] memory tokensOut = new TokenIO[](constituents.length);
         for (uint256 i = 0; i < constituents.length; i++) {
             uint256 balance = IERC20(constituents[i].token).balanceOf(address(this));
-            tokensOut[i].amount = balance * propOut / BONE;
+            tokensOut[i].amount = balance * propOut / ONE;
             tokensOut[i].token = constituents[i].token;
         }
 
         _allExit(tokensOut, _in);
+    }
+
+    /*
+     * @notice single-token join, takes an amount of token a user is willing to deposit
+     * @param constituentIn The token to deposit
+     * @param amountIn The amount of tokens to deposit
+     */
+    function singleJoin_AmountIn(Constituent calldata constituentIn, uint256 amountIn) 
+        external 
+        _lock_
+        _positiveIn(amountIn)
+    {
+        uint256 balanceBefore = IERC20(constituentIn.token).balanceOf(address(this));
+        uint256 balanceAfter = balanceBefore + amountIn;
+
+        uint256 fraction = balanceAfter * ONE / balanceBefore;
+        uint256 q = fraction ** (constituentIn.norm) - ONE;
+
+        uint256 out = totalSupply() * q / ONE;
+
+        _singleJoin(constituentIn, out, amountIn);
+    }
+
+    // TODO: cool feature to implement, math tricky (solidity)
+    // function singleJoin_AmountOut(Constituent calldata constituentIn, uint256 out) 
+    //     external 
+    //     _lock_
+    // {
+    //     uint256 power = 100 * ONE / constituentIn.norm;
+
+    // }
+
+    function _singleJoin(Constituent calldata constituentIn, uint256 out, uint256 amountIn) 
+        internal 
+        _isLocked
+    {
+        _pullFromSender(constituentIn.token, amountIn);
+        _mintSender(out);
+
+        emit SINGLE_JOIN(msg.sender, constituentIn.token, out, amountIn);
     }
 
     /*
