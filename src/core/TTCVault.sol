@@ -274,7 +274,6 @@ contract TTCVault is TTC, TTCMath {
      */
     function _pullFromSender(address _token, uint256 _amount) 
         internal
-        returns(bool)
     {
         uint256 balanceBefore = IERC20(_token).balanceOf(address(this));
         IERC20(_token).transferFrom(msg.sender, address(this), _amount);
@@ -285,7 +284,7 @@ contract TTCVault is TTC, TTCMath {
             success = true;
         }
 
-        return success;
+        require(success, "ERR_TRANSFER_FAILED");
     }
 
     function _pushToSender(address _token, uint256 _amount) 
