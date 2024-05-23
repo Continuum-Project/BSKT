@@ -2,6 +2,7 @@
 pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {console} from "forge-std/Test.sol";
 
 import "./TTC.sol";
 import "../types/Types.sol";
@@ -51,7 +52,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
         _lock_
     {
         require(totalSupply() == 0, "ERR_NOT_FIRST_JOIN");
-        _allJoin(tokens, 1); // mint 1 TTC, sets the initial price
+        _allJoin(tokens, 1 * 10 ** decimals()); // mint 1 TTC, sets the initial price
     }
 
     /*
@@ -64,17 +65,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
         external 
         _lock_
         _notFirstJoin_
-    {
-        uint propIn = mul(out, totalSupply()); // the proportion of each token to deposit in order to get "out" amount
-        TokenIO[] memory tokensIn = new TokenIO[](constituents.length);
-        for (uint256 i = 0; i < constituents.length; i++) {
-            uint256 balance = IERC20(constituents[i].token).balanceOf(address(this));
-            tokensIn[i].amount = mul(balance, propIn);
-            tokensIn[i].token = constituents[i].token;
-        }
-
-        _allJoin(tokensIn, out);
-    }
+    {_allJoin_Out(out);}
 
     /*
      * @notice all-tokens join, providing the list of tokens a sender is willing to deposit, the contract searches for the best all-tokens join
@@ -96,14 +87,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
         }
 
         uint256 out = mul(totalSupply(), minProp);
-
-        TokenIO[] memory tokensIn = new TokenIO[](constituents.length);
-        for (uint256 i = 0; i < constituents.length; i++) {
-            tokensIn[i].amount = mul(tokens[i].amount, ERC20(constituents[i].token).balanceOf(address(this)));
-            tokensIn[i].token = tokens[i].token;
-        }
-
-        _allJoin(tokensIn, out);
+        _allJoin_Out(out);
     }
 
     /*
@@ -247,6 +231,21 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
 
         _mintSender(_out);
         emit ALL_JOIN(msg.sender, _out);
+    }
+
+    function _allJoin_Out(uint256 out) 
+        internal 
+        _isLocked_
+    {
+        uint propIn = div(out, totalSupply()); // the proportion of each token to deposit in order to get "out" amount
+        TokenIO[] memory tokensIn = new TokenIO[](constituents.length);
+        for (uint256 i = 0; i < constituents.length; i++) {
+            uint256 balance = IERC20(constituents[i].token).balanceOf(address(this));
+            tokensIn[i].amount = mul(balance, propIn);
+            tokensIn[i].token = constituents[i].token;
+        }
+
+        _allJoin(tokensIn, out);
     }
 
     /*

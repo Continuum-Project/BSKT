@@ -55,4 +55,59 @@ contract TTCVaultTest is TtcTestContext {
         vm.expectRevert();
         vault.singleJoin_AmountOut(Constituent(WETH_ADDRESS, 50), 100);
     }
+
+    function testAllJoin_Out() public {
+        address sender = liquidSetUp();
+
+        uint denominator = 4; // NOTE: precision errors for odd numbers
+
+        uint256 addedWETH = InitWETH / denominator;
+        uint256 addedWBTC = InitWBTC / denominator;
+        uint256 addedSHIB = InitSHIB / denominator;
+        uint256 addedTONCOIN = InitTONCOIN / denominator;
+        uint256 addedTTC = InitTTC / denominator;
+
+        vm.startPrank(sender);
+        dealAndApprove(WETH_ADDRESS, sender, addedWETH);
+        dealAndApprove(WBTC_ADDRESS, sender, addedWBTC);
+        dealAndApprove(SHIB_ADDRESS, sender, addedSHIB);
+        dealAndApprove(TONCOIN_ADDRESS, sender, addedTONCOIN);
+
+        vault.allJoin_Out(1 * PRECISION / denominator); // hence, the sender has to provide the same amounts of tokens currently in the vault divided by 2
+        vm.stopPrank();
+
+        assertEq(ERC20(WETH_ADDRESS).balanceOf(sender), 0);
+        assertEq(ERC20(WBTC_ADDRESS).balanceOf(sender), 0);
+        assertEq(ERC20(SHIB_ADDRESS).balanceOf(sender), 0);
+        assertEq(ERC20(TONCOIN_ADDRESS).balanceOf(sender), 0);
+
+        assertEq(ERC20(WETH_ADDRESS).balanceOf(address(vault)), InitWETH + addedWETH);
+        assertEq(ERC20(WBTC_ADDRESS).balanceOf(address(vault)), InitWBTC + addedWBTC);
+        assertEq(ERC20(SHIB_ADDRESS).balanceOf(address(vault)), InitSHIB + addedSHIB);
+        assertEq(ERC20(TONCOIN_ADDRESS).balanceOf(address(vault)), InitTONCOIN + addedTONCOIN);
+
+        // got half of TTC
+        assertEq(ERC20(vault).balanceOf(sender), InitTTC + addedTTC);
+    }
+
+    function testAllJoin_Min() public {
+        address sender = liquidSetUp();
+
+        TokenIO[] memory tokens = getDefaultTokens();
+        
+        vm.startPrank(sender);
+        dealAndApprove(WETH_ADDRESS, sender, tokens[0].amount);
+        dealAndApprove(WBTC_ADDRESS, sender, tokens[1].amount);
+        dealAndApprove(SHIB_ADDRESS, sender, tokens[2].amount);
+        dealAndApprove(TONCOIN_ADDRESS, sender, tokens[3].amount);
+
+        // increase amounts of tokens io, so min should take TONCOIN's proportion
+        // note: approve before increasing for additional testing
+        tokens[0].amount *= 2;
+        tokens[1].amount *= 2;
+        tokens[2].amount *= 2;
+
+        vault.allJoin_Min(tokens);
+        vm.stopPrank();
+    }
 }

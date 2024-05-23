@@ -15,7 +15,20 @@ contract TtcTestContext is Test {
     address constant SHIB_ADDRESS = 0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE;
     address constant TONCOIN_ADDRESS = 0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1;
 
-    uint256 constant PRECISION = 10 ** 18;
+    uint256 constant PRECISION = 10**18;
+
+    // Together, these assets are worth 1mil dollars
+    // Prices assumed for tokens:
+    // WETH: $3000
+    // WBTC: $60000
+    // SHIB: $0.00003
+    // TONCOIN: $7
+    uint256 constant InitWETH = 166.6 * 10 ** 18;
+    uint256 constant InitWBTC = 5 * 10 ** 18;
+    uint256 constant InitSHIB = 3333333333.3 * 10 ** 18;
+    uint256 constant InitTONCOIN = 14285.7 * 10 ** 18;
+
+    uint256 constant InitTTC = 1 * PRECISION;
 
     function setUp() public {
         Constituent[] memory initialConstituents = new Constituent[](4);
@@ -50,27 +63,35 @@ contract TtcTestContext is Test {
         TokenIO[] memory tokens = getDefaultTokens();
 
         // Approve the vault to spend the tokens
-        ERC20(WETH_ADDRESS).approve(address(vault), 166.6 ether);
-        ERC20(WBTC_ADDRESS).approve(address(vault), 5 ether);
-        ERC20(SHIB_ADDRESS).approve(address(vault), 3333333333.3 ether);
-        ERC20(TONCOIN_ADDRESS).approve(address(vault), 14285.7 ether);
-
-        // deal
-        deal(WETH_ADDRESS, sender, 166.6 ether);
-        deal(WBTC_ADDRESS, sender, 5 ether);
-        deal(SHIB_ADDRESS, sender, 3333333333.3 ether);
-        deal(TONCOIN_ADDRESS, sender, 14285.7 ether);
+        dealAndApprove(WETH_ADDRESS, sender, InitWETH);
+        dealAndApprove(WBTC_ADDRESS, sender, InitWBTC);
+        dealAndApprove(SHIB_ADDRESS, sender, InitSHIB);
+        dealAndApprove(TONCOIN_ADDRESS, sender, InitTONCOIN);
 
         vault.allJoin_Initial(tokens);
     }
 
     function getDefaultTokens() public pure returns (TokenIO[] memory) {
         TokenIO[] memory tokens = new TokenIO[](4);
-        tokens[0] = TokenIO(WETH_ADDRESS, 166.6 ether);
-        tokens[1] = TokenIO(WBTC_ADDRESS, 5 ether);
-        tokens[2] = TokenIO(SHIB_ADDRESS, 3333333333.3 ether);
-        tokens[3] = TokenIO(TONCOIN_ADDRESS, 14285.7 ether);
+        tokens[0] = TokenIO(WETH_ADDRESS, InitWETH);
+        tokens[1] = TokenIO(WBTC_ADDRESS, InitWBTC);
+        tokens[2] = TokenIO(SHIB_ADDRESS, InitSHIB);
+        tokens[3] = TokenIO(TONCOIN_ADDRESS, InitTONCOIN);
 
         return tokens;
+    }
+
+    function dealAndApprove(address token, address sender, uint256 amount) public {
+        ERC20(token).approve(address(vault), amount);
+        deal(token, sender, amount);
+    }
+
+    function liquidSetUp() public returns (address) {
+        setUp();
+        address sender = makeAddr("sender");
+        vm.startPrank(sender);
+        initLiquidity(sender);
+        vm.stopPrank();
+        return sender;
     }
 }
