@@ -15,18 +15,28 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
         _locked = false;
     }
 
-    modifier _validTokensIn(TokenIO[] calldata _tokens) {
+    modifier _validTokensIn_(TokenIO[] calldata _tokens) {
         require(_checkTokensIn(_tokens), "ERR_INVALID_TOKENS");
         _;
     }
 
-    modifier _isLocked() {
+    modifier _isLocked_() {
         require(_locked, "ERR_NOT_LOCKED");
         _;
     }
 
-    modifier _positiveIn(uint256 _in) {
+    modifier _positiveIn_(uint256 _in) {
         require(_in > 0, "ERR_ZERO_IN");
+        _;
+    }
+
+    modifier _notFirstJoin_() {
+        require(totalSupply() > 0, "ERR_FIRST_JOIN");
+        _;
+    }
+
+    modifier _shouldBeFirstJoin_() {
+        require(totalSupply() == 0, "ERR_NOT_FIRST_JOIN");
         _;
     }
 
@@ -39,6 +49,14 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
         }
     }
 
+    function allJoin_Initial(TokenIO[] calldata tokens)
+        external
+        _lock_
+        _shouldBeFirstJoin_
+    {
+        _allJoin(tokens, 1); // mint 1 TTC, sets the initial price
+    }
+
     /*
      * @notice all-tokens join, providing the desired amount of TTC out
      * @notice It is responsibility of a caller to check that they have the correct amount of tokens
@@ -48,6 +66,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
     function allJoin_Out(uint256 out) 
         external 
         _lock_
+        _notFirstJoin_
     {
         uint propIn = mul(out, totalSupply()); // the proportion of each token to deposit in order to get "out" amount
         TokenIO[] memory tokensIn = new TokenIO[](constituents.length);
@@ -68,7 +87,8 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
     function allJoin_Min(TokenIO[] calldata tokens) 
         external 
         _lock_
-        _validTokensIn(tokens)
+        _validTokensIn_(tokens)
+        _notFirstJoin_
     {
         uint256 minProp = type(uint256).max;
         for (uint256 i = 0; i < constituents.length; i++) {
@@ -116,7 +136,8 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
     function singleJoin_AmountIn(Constituent calldata constituentIn, uint256 amountIn) 
         external 
         _lock_
-        _positiveIn(amountIn)
+        _positiveIn_(amountIn)
+        _notFirstJoin_
     {
         uint256 balanceBefore = IERC20(constituentIn.token).balanceOf(address(this));
         uint256 balanceAfter = add(balanceBefore, amountIn);
@@ -140,6 +161,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
     function singleJoin_AmountOut(Constituent calldata constituentIn, uint256 out) 
         external 
         _lock_
+        _notFirstJoin_
     {
         uint256 q = div(out, totalSupply());
         uint256 power = div(1, constituentIn.norm);
@@ -161,7 +183,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
     function singleExit(Constituent calldata constituentOut, uint256 _in) 
         external 
         _lock_
-        _positiveIn(_in)
+        _positiveIn_(_in)
     {
         uint256 alpha = div(_in, totalSupply());
         uint oneSubAlpha = sub(ONE, alpha);
@@ -184,7 +206,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
      */
     function _singleJoin(Constituent calldata constituentIn, uint256 out, uint256 amountIn) 
         internal 
-        _isLocked
+        _isLocked_
     {
         _pullFromSender(constituentIn.token, amountIn);
         _mintSender(out);
@@ -199,7 +221,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
      */
     function _singleExit(Constituent calldata constituentOut, uint256 amountOut, uint256 _in) 
         internal 
-        _isLocked
+        _isLocked_
     {
         _pushToSender(constituentOut.token, amountOut);
         _burnSender(_in);
@@ -215,7 +237,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
      */
     function _allJoin(TokenIO[] memory _tokens, uint256 _out) 
         internal
-        _isLocked // for safety, should only be called from locked functions to prevent reentrancy
+        _isLocked_ // for safety, should only be called from locked functions to prevent reentrancy
     {
         for (uint256 i = 0; i < constituents.length; i++) {
             _pullFromSender(_tokens[i].token, _tokens[i].amount);
@@ -232,7 +254,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
      */
     function _allExit(TokenIO[] memory _tokens, uint256 _in) 
         internal
-        _isLocked // for safety, should only be called from locked functions to prevent reentrancy
+        _isLocked_ // for safety, should only be called from locked functions to prevent reentrancy
     {
         for (uint256 i = 0; i < constituents.length; i++) {
             _pushToSender(_tokens[i].token, _tokens[i].amount);
@@ -276,7 +298,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
         returns (bool) 
     {
         for (uint256 i = 0; i < constituents.length; i++) {
-            if ((constituents[i].token == _tokens[i].token) || (_tokens[i].amount == 0)) { // amount should be non-zero
+            if ((constituents[i].token != _tokens[i].token) || (_tokens[i].amount == 0)) { // amount should be non-zero
                 return false;
             }
         }
