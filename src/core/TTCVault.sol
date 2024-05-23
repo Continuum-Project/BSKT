@@ -200,6 +200,11 @@ contract TTCVault is TTC, TTCMath {
         _singleExit(constituentOut, amountOut, _in);
     }
 
+    /*
+     * @notice single-token exit, takes an amount of token a user is willing to receive
+     * @param constituentOut The token to exit
+     * @param amountOut The amount of tokens to receive
+     */
     function _singleJoin(Constituent calldata constituentIn, uint256 out, uint256 amountIn) 
         internal 
         _isLocked
@@ -243,6 +248,11 @@ contract TTCVault is TTC, TTCMath {
         emit ALL_JOIN(msg.sender, _out);
     }
 
+    /*
+     * @notice executes an all-tokens exit
+     * @param _tokens The tokens to withdraw
+     * @param _amounts The amounts of tokens to withdraw
+     */
     function _allExit(TokenIO[] memory _tokens, uint256 _in) 
         internal
         _isLocked // for safety, should only be called from locked functions to prevent reentrancy
@@ -266,7 +276,15 @@ contract TTCVault is TTC, TTCMath {
         internal
         returns(bool)
     {
-        bool success = IERC20(_token).transferFrom(msg.sender, address(this), _amount);
+        uint256 balanceBefore = IERC20(_token).balanceOf(address(this));
+        IERC20(_token).transferFrom(msg.sender, address(this), _amount);
+        uint256 balanceAfter = IERC20(_token).balanceOf(address(this));
+
+        bool success = false;
+        if (balanceAfter > balanceBefore) {
+            success = true;
+        }
+
         return success;
     }
 
