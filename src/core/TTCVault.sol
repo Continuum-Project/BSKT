@@ -153,14 +153,52 @@ contract TTCVault is TTC, TTCMath {
         _singleJoin(constituentIn, out, amountIn);
     }
 
-    // TODO: cool feature to implement, math tricky (solidity)
-    // function singleJoin_AmountOut(Constituent calldata constituentIn, uint256 out) 
-    //     external 
-    //     _lock_
-    // {
-    //     uint256 power = 100 * ONE / constituentIn.norm;
+    /*
+        * @notice single-token join, takes an amount of TTC a user wants to receive
+        * @notice it is a user's responsibility to check that they have enough tokens to deposit
+        * @dev amountIn = B_i * (q + 1)^(1/norm) - B_i [B_i - balance of the token, q - proportion of TTC to mint, norm - norm of the token]
+        * @param constituentIn The token to deposit
+        * @param out The amount of TTC to receive
+        */
+    function singleJoin_AmountOut(Constituent calldata constituentIn, uint256 out) 
+        external 
+        _lock_
+    {
+        uint256 q = div(out, totalSupply());
+        uint256 power = div(1, constituentIn.norm);
+        uint256 qPlus1Powered = pow(q + 1, power);
+        
+        uint256 balance = IERC20(constituentIn.token).balanceOf(address(this));
+        uint256 mulByBalance = mul(qPlus1Powered, balance);
+        uint256 amountIn = sub(mulByBalance, balance);
 
-    // }
+        _singleJoin(constituentIn, out, amountIn);
+    }
+
+    /*
+        * @notice single-token exit, takes an amount of TTC a user is willing to exit
+        * @dev amountOut = B_i - B_i * (1 - alpha)^(1/norm) [B_i - balance of the token, alpha - proportion of TTC to exit, norm - norm of the token]
+        * @param constituentOut The token to exit
+        * @param _in The amount of TTC to exit
+        */
+    function singleExit(Constituent calldata constituentOut, uint256 _in) 
+        external 
+        _lock_
+        _positiveIn(_in)
+    {
+        uint256 alpha = div(_in, totalSupply());
+        uint oneSubAlpha = sub(ONE, alpha);
+
+        uint256 power = div(1, constituentOut.norm);
+        uint256 poweredTerm = pow(oneSubAlpha, power);
+
+        uint256 balance = IERC20(constituentOut.token).balanceOf(address(this));
+        uint256 mulBalanceTerm = mul(balance, poweredTerm);
+
+        uint256 amountOut = sub(balance, mulBalanceTerm);
+
+        _singleExit(constituentOut, amountOut, _in);
+    }
 
     function _singleJoin(Constituent calldata constituentIn, uint256 out, uint256 amountIn) 
         internal 
