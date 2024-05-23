@@ -40,4 +40,17 @@ contract TTCFees is TTCConstants {
         emit FeeCharged(msg.sender, fee);
         return amount - fee;
     }
+
+    /**
+     * @notice Split an amount into two parts, one balanced and one not balanced
+     * @param amount The amount to split
+     * @param norm The normalized weight of the token
+     * @return norm*amount/100, (100-norm)*amount/100
+     */
+    function splitBalancedNotBalanced(uint256 amount, uint8 norm) internal pure returns (uint256, uint256) {
+        uint256 _norm = norm * ONE / 100;
+        uint256 amountBalanced = amount * _norm / ONE;
+
+        return (amountBalanced, amount - amountBalanced);
+    }
 }
