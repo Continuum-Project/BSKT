@@ -94,20 +94,33 @@ contract TTCVaultTest is TtcTestContext {
         address sender = liquidSetUp();
 
         TokenIO[] memory tokens = getDefaultTokens();
-        
+
+        // increase amounts of tokens io, so min should take TONCOIN's proportion
+        tokens[0].amount *= 2;
+        tokens[1].amount *= 2;
+        tokens[2].amount *= 2;
+
         vm.startPrank(sender);
         dealAndApprove(WETH_ADDRESS, sender, tokens[0].amount);
         dealAndApprove(WBTC_ADDRESS, sender, tokens[1].amount);
         dealAndApprove(SHIB_ADDRESS, sender, tokens[2].amount);
         dealAndApprove(TONCOIN_ADDRESS, sender, tokens[3].amount);
-
-        // increase amounts of tokens io, so min should take TONCOIN's proportion
-        // note: approve before increasing for additional testing
-        tokens[0].amount *= 2;
-        tokens[1].amount *= 2;
-        tokens[2].amount *= 2;
-
+        
         vault.allJoin_Min(tokens);
         vm.stopPrank();
+
+        // assert that TONCOIN's proportion was added
+        assertEq(ERC20(WETH_ADDRESS).balanceOf(sender), tokens[0].amount / 2);
+        assertEq(ERC20(WBTC_ADDRESS).balanceOf(sender), tokens[1].amount / 2);
+        assertEq(ERC20(SHIB_ADDRESS).balanceOf(sender), tokens[2].amount / 2);
+        assertEq(ERC20(TONCOIN_ADDRESS).balanceOf(sender), 0);
+
+        assertEq(ERC20(WETH_ADDRESS).balanceOf(address(vault)), InitWETH + tokens[0].amount / 2);
+        assertEq(ERC20(WBTC_ADDRESS).balanceOf(address(vault)), InitWBTC + tokens[1].amount / 2);
+        assertEq(ERC20(SHIB_ADDRESS).balanceOf(address(vault)), InitSHIB + tokens[2].amount / 2);
+        assertEq(ERC20(TONCOIN_ADDRESS).balanceOf(address(vault)), InitTONCOIN + tokens[3].amount);
+
+        // got full TTC in return
+        assertEq(ERC20(vault).balanceOf(sender), InitTTC * 2);
     }
 }
