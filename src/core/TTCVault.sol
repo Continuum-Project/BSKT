@@ -24,6 +24,13 @@ contract TTCVault is TTC, TTCMath {
         uint256 amountIn
     );
 
+    event SINGLE_EXIT (
+        address indexed sender,
+        address indexed token,
+        uint256 iIn,
+        uint256 amountOut
+    );
+
     modifier _lock_() {
         require(!_locked, "ERR_REENTRANCY");
         _locked = true;
@@ -65,11 +72,11 @@ contract TTCVault is TTC, TTCMath {
         external 
         _lock_
     {
-        uint256 propIn = out * ONE / totalSupply(); // the proportion of each token to deposit in order to get "out" amount
+        uint propIn = mul(out, totalSupply()); // the proportion of each token to deposit in order to get "out" amount
         TokenIO[] memory tokensIn = new TokenIO[](constituents.length);
         for (uint256 i = 0; i < constituents.length; i++) {
             uint256 balance = IERC20(constituents[i].token).balanceOf(address(this));
-            tokensIn[i].amount = balance * propIn / ONE;
+            tokensIn[i].amount = mul(balance, propIn);
             tokensIn[i].token = constituents[i].token;
         }
 
@@ -88,17 +95,17 @@ contract TTCVault is TTC, TTCMath {
     {
         uint256 minProp = type(uint256).max;
         for (uint256 i = 0; i < constituents.length; i++) {
-            uint256 prop = tokens[i].amount * ONE / ERC20(constituents[i].token).balanceOf(address(this));
+            uint256 prop = div(tokens[i].amount, ERC20(constituents[i].token).balanceOf(address(this)));
             if (prop < minProp) {
                 minProp = prop;
             }
         }
 
-        uint256 out = totalSupply() * minProp / ONE;
+        uint256 out = mul(totalSupply(), minProp);
 
         TokenIO[] memory tokensIn = new TokenIO[](constituents.length);
         for (uint256 i = 0; i < constituents.length; i++) {
-            tokensIn[i].amount = tokens[i].amount * ERC20(constituents[i].token).balanceOf(address(this)) / ONE;
+            tokensIn[i].amount = mul(tokens[i].amount, ERC20(constituents[i].token).balanceOf(address(this)));
             tokensIn[i].token = tokens[i].token;
         }
 
@@ -113,11 +120,11 @@ contract TTCVault is TTC, TTCMath {
         external 
         _lock_
     {
-        uint256 propOut = _in * ONE / totalSupply();
+        uint256 propOut = div(_in, totalSupply());
         TokenIO[] memory tokensOut = new TokenIO[](constituents.length);
         for (uint256 i = 0; i < constituents.length; i++) {
             uint256 balance = IERC20(constituents[i].token).balanceOf(address(this));
-            tokensOut[i].amount = balance * propOut / ONE;
+            tokensOut[i].amount = mul(balance, propOut);
             tokensOut[i].token = constituents[i].token;
         }
 
@@ -135,12 +142,13 @@ contract TTCVault is TTC, TTCMath {
         _positiveIn(amountIn)
     {
         uint256 balanceBefore = IERC20(constituentIn.token).balanceOf(address(this));
-        uint256 balanceAfter = balanceBefore + amountIn;
+        uint256 balanceAfter = add(balanceBefore, amountIn);
 
-        uint256 fraction = balanceAfter * ONE / balanceBefore;
-        uint256 q = fraction ** (constituentIn.norm) - ONE;
+        uint256 fraction = div(balanceAfter, balanceBefore);
+        uint256 qP1 = powi(fraction, (constituentIn.norm));
+        uint256 q = sub(qP1, ONE);
 
-        uint256 out = totalSupply() * q / ONE;
+        uint256 out = mul(totalSupply(), q);
 
         _singleJoin(constituentIn, out, amountIn);
     }
@@ -162,6 +170,21 @@ contract TTCVault is TTC, TTCMath {
         _mintSender(out);
 
         emit SINGLE_JOIN(msg.sender, constituentIn.token, out, amountIn);
+    }
+
+    /*
+     * @notice single-token exit, takes an amount of TTC a user is willing to exit
+     * @param constituentOut The token to exit
+     * @param _in The amount of TTC to exit
+     */
+    function _singleExit(Constituent calldata constituentOut, uint256 amountOut, uint256 _in) 
+        internal 
+        _isLocked
+    {
+        _pushToSender(constituentOut.token, amountOut);
+        _burnSender(_in);
+
+        emit SINGLE_EXIT(msg.sender, constituentOut.token, _in, amountOut);
     }
 
     /*
