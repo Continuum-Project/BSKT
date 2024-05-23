@@ -36,6 +36,8 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
         _;
     }
 
+    uint256 constant BASE_REDEMPTION_FEE = 5 * ONE / 10000; // 0.05%
+
     bool private _locked;
     Constituent[] public constituents;
 
@@ -219,7 +221,10 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
         internal 
         _isLocked_
     {
-        _pushToSender(constituentOut.token, amountOut);
+        uint256 fee = amountOut * BASE_REDEMPTION_FEE / ONE;
+        uint256 amountSubFee = sub(amountOut, fee);
+
+        _pushToSender(constituentOut.token, amountSubFee);
         _burnSender(_in);
 
         emit SINGLE_EXIT(msg.sender, constituentOut.token, _in, amountOut);
@@ -253,7 +258,10 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
         _isLocked_ // for safety, should only be called from locked functions to prevent reentrancy
     {
         for (uint256 i = 0; i < constituents.length; i++) {
-            _pushToSender(_tokens[i].token, _tokens[i].amount);
+            uint256 fee = _tokens[i].amount * BASE_REDEMPTION_FEE / ONE;
+            uint256 amountSubFee = sub(_tokens[i].amount, fee);
+            
+            _pushToSender(_tokens[i].token, amountSubFee);
         }
 
         _burnSender(_in);
