@@ -33,7 +33,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
         _;
     }
 
-    modifier _notFirstJoin_() {
+    modifier _supplyNonZero_() {
         require(totalSupply() > 0, "ERR_FIRST_JOIN");
         _;
     }
@@ -64,7 +64,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
     function allJoin_Out(uint256 out) 
         external 
         _lock_
-        _notFirstJoin_
+        _supplyNonZero_
     {_allJoin_Out(out);}
 
     /*
@@ -76,7 +76,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
         external 
         _lock_
         _validTokensIn_(tokens)
-        _notFirstJoin_
+        _supplyNonZero_
     {
         uint256 minProp = type(uint256).max;
         for (uint256 i = 0; i < constituents.length; i++) {
@@ -119,7 +119,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
         external 
         _lock_
         _positiveInput_(amountIn)
-        _notFirstJoin_
+        _supplyNonZero_
     {
         uint256 balanceBefore = IERC20(constituentIn.token).balanceOf(address(this));
         uint256 balanceAfter = add(balanceBefore, amountIn);
@@ -143,7 +143,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
     function singleJoin_AmountOut(Constituent calldata constituentIn, uint256 out) 
         external 
         _lock_
-        _notFirstJoin_
+        _supplyNonZero_
         _positiveInput_(out)
     {
         uint256 q = div(out, totalSupply());
