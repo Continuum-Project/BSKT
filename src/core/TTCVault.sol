@@ -17,10 +17,10 @@ contract TTCVault is TTC {
     );
 
     modifier _lock_() {
-        require(!_lock, "ERR_REENTRANCY");
-        _lock = true;
+        require(!_locked, "ERR_REENTRANCY");
+        _locked = true;
         _;
-        _lock = false;
+        _locked = false;
     }
 
     modifier _validTokensIn(TokenIO[] calldata _tokens) {
@@ -29,11 +29,11 @@ contract TTCVault is TTC {
     }
 
     modifier _isLocked() {
-        require(_lock, "ERR_NOT_LOCKED");
+        require(_locked, "ERR_NOT_LOCKED");
         _;
     }
 
-    bool private _lock;
+    bool private _locked;
     Constituent[] public constituents;
 
     constructor(Constituent[] memory initialConstituents) {
