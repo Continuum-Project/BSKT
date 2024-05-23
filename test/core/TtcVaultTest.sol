@@ -150,4 +150,72 @@ contract TTCVaultTest is TtcTestContext {
         vault.allJoin_Min(new TokenIO[](4));
         vm.stopPrank();
     }
+
+    function testAllExit() public {
+        address sender = liquidSetUp();
+
+        // exit half of TTC
+        uint256 _in = InitTTC / 2;
+
+        vm.startPrank(sender);
+        vault.allExit(_in);
+        vm.stopPrank();
+
+        // assert that half of TTC was burned
+        assertEq(ERC20(vault).balanceOf(sender), InitTTC / 2);
+        assertEq(ERC20(vault).totalSupply(), InitTTC / 2);
+
+        // assert that half of the tokens were returned (with base fee)
+        uint256 expectedETHBalance = chargeBaseFee(InitWETH / 2);
+        uint256 expectedBTCBalance = chargeBaseFee(InitWBTC / 2);
+        uint256 expectedSHIBBalance = chargeBaseFee(InitSHIB / 2);
+        uint256 expectedTONCOINBalance = chargeBaseFee(InitTONCOIN / 2);
+
+        assertEq(ERC20(WETH_ADDRESS).balanceOf(sender), expectedETHBalance);
+        assertEq(ERC20(WBTC_ADDRESS).balanceOf(sender), expectedBTCBalance);
+        assertEq(ERC20(SHIB_ADDRESS).balanceOf(sender), expectedSHIBBalance);
+        assertEq(ERC20(TONCOIN_ADDRESS).balanceOf(sender), expectedTONCOINBalance);
+
+        assertEq(ERC20(WETH_ADDRESS).balanceOf(address(vault)), InitWETH - expectedETHBalance);
+        assertEq(ERC20(WBTC_ADDRESS).balanceOf(address(vault)), InitWBTC - expectedBTCBalance);
+        assertEq(ERC20(SHIB_ADDRESS).balanceOf(address(vault)), InitSHIB - expectedSHIBBalance);
+        assertEq(ERC20(TONCOIN_ADDRESS).balanceOf(address(vault)), InitTONCOIN - expectedTONCOINBalance);
+
+        // exit remaining TTC
+        vm.startPrank(sender);
+        vault.allExit(InitTTC / 2);
+        vm.stopPrank();
+
+        // assert that all TTC was burned
+        assertEq(ERC20(vault).balanceOf(sender), 0);
+        assertEq(ERC20(vault).totalSupply(), 0);
+
+        // assert that all the tokens were returned (with base fee)
+        uint256 ethBalanceExit1 = InitWETH - expectedETHBalance;
+        uint256 btcBalanceExit1 = InitWBTC - expectedBTCBalance;
+        uint256 shibBalanceExit1 = InitSHIB - expectedSHIBBalance;
+        uint256 toncoinBalanceExit1 = InitTONCOIN - expectedTONCOINBalance;
+
+        expectedETHBalance += chargeBaseFee(ethBalanceExit1);
+        expectedBTCBalance += chargeBaseFee(btcBalanceExit1);
+        expectedSHIBBalance += chargeBaseFee(shibBalanceExit1);
+        expectedTONCOINBalance += chargeBaseFee(toncoinBalanceExit1);
+
+        assertEq(ERC20(WETH_ADDRESS).balanceOf(sender), expectedETHBalance);
+        assertEq(ERC20(WBTC_ADDRESS).balanceOf(sender), expectedBTCBalance);
+        assertEq(ERC20(SHIB_ADDRESS).balanceOf(sender), expectedSHIBBalance);
+        assertEq(ERC20(TONCOIN_ADDRESS).balanceOf(sender), expectedTONCOINBalance);
+
+        // only fee remains in the vault
+        assertEq(ERC20(WETH_ADDRESS).balanceOf(address(vault)), InitWETH - expectedETHBalance);
+        assertEq(ERC20(WBTC_ADDRESS).balanceOf(address(vault)), InitWBTC - expectedBTCBalance);
+        assertEq(ERC20(SHIB_ADDRESS).balanceOf(address(vault)), InitSHIB - expectedSHIBBalance);
+        assertEq(ERC20(TONCOIN_ADDRESS).balanceOf(address(vault)), InitTONCOIN - expectedTONCOINBalance);
+
+        // exit zero TTC
+        vm.startPrank(sender);
+        vm.expectRevert();
+        vault.allExit(0);
+        vm.stopPrank();
+    }
 }

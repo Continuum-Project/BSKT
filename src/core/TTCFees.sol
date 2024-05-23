@@ -9,11 +9,11 @@ contract TTCFees is TTCConstants {
         uint256 fee
     );
 
-    uint256 constant BASE_REDEMPTION_FEE = 5 * ONE / 10000; // 0.05%
+    uint256 constant public BASE_REDEMPTION_FEE = 5 * ONE / 10000; // 0.05%
 
     // The fee charged during a single token join in addition to base fee times (1 - W_i) * 100
     // Fee charged for token with normalized weight of 0.2 is 0.05% + (1 - 0.2) * 0.001% * 100 = 0.05% + 0.08% = 0.13%
-    uint256 constant FEE_MARGIN = 10 * ONE / 1000000; // 0.001%
+    uint256 constant public FEE_MARGIN = 10 * ONE / 1000000; // 0.001%
 
     /**
      * @notice Charge a base fee of 0.05% for an amount

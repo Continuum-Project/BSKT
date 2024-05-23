@@ -97,6 +97,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
     function allExit(uint256 _in) 
         external 
         _lock_
+        _positiveIn_(_in)
     {
         uint256 propOut = div(_in, totalSupply());
         TokenIO[] memory tokensOut = new TokenIO[](constituents.length);
