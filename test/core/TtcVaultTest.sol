@@ -105,7 +105,7 @@ contract TTCVaultTest is TtcTestContext {
         dealAndApprove(WBTC_ADDRESS, sender, tokens[1].amount);
         dealAndApprove(SHIB_ADDRESS, sender, tokens[2].amount);
         dealAndApprove(TONCOIN_ADDRESS, sender, tokens[3].amount);
-        
+
         vault.allJoin_Min(tokens);
         vm.stopPrank();
 
@@ -122,5 +122,32 @@ contract TTCVaultTest is TtcTestContext {
 
         // got full TTC in return
         assertEq(ERC20(vault).balanceOf(sender), InitTTC * 2);
+    }
+
+    function testAllJoin_FailAssertion() public {
+        address sender = liquidSetUp();
+
+        // insufficient funds
+        vm.startPrank(sender);
+        vm.expectRevert();
+        vault.allJoin_Min(getDefaultTokens());
+        vm.stopPrank();
+
+        // too high out amount requested
+        vm.startPrank(sender);
+        dealAndApprove(WETH_ADDRESS, sender, 1 * PRECISION);
+        dealAndApprove(WBTC_ADDRESS, sender, 1 * PRECISION);
+        dealAndApprove(SHIB_ADDRESS, sender, 1 * PRECISION);
+        dealAndApprove(TONCOIN_ADDRESS, sender, 1 * PRECISION);
+
+        vm.expectRevert();
+        vault.allJoin_Out(1 * PRECISION);
+        vm.stopPrank();
+
+        // zero tokens in min
+        vm.startPrank(sender);
+        vm.expectRevert();
+        vault.allJoin_Min(new TokenIO[](4));
+        vm.stopPrank();
     }
 }
