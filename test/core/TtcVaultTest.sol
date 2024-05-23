@@ -308,7 +308,9 @@ contract TTCVaultTest is TtcTestContext {
         assertEq(ERC20(vault).balanceOf(sender), expectedTTCSender);
 
         // assert correct WBTC amount was reducted
-        assertApproxEqAbs(ERC20(WBTC_ADDRESS).balanceOf(sender), apprxError, DEFAULT_APPROXIMATION_ERROR);
+        // approx error should be reduced since it is only applied for spended to have sufficient balance
+        // when checking, we should base approximation on this error
+        assertApproxEqAbs(ERC20(WBTC_ADDRESS).balanceOf(sender), apprxError, DEFAULT_APPROXIMATION_ERROR); 
 
         // assert correct WBTC amount was added
         assertApproxEqAbs(ERC20(WBTC_ADDRESS).balanceOf(address(vault)), InitWBTC + addedWBTC - apprxError, DEFAULT_APPROXIMATION_ERROR);
