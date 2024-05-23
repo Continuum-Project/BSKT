@@ -8,5 +8,5 @@ contract TTCConstants {
 
     uint public constant MIN_POW_BASE     = 1 wei;
     uint public constant MAX_POW_BASE     = (2 * ONE) - 1 wei;
-    uint public constant POW_PRECISION    = ONE / 10**10;
+    uint public constant POW_PRECISION    = ONE / 10**12;
 }

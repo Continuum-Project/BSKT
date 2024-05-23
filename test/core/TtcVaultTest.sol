@@ -260,4 +260,57 @@ contract TTCVaultTest is TtcTestContext {
         expectedTTC += 56388443400205350;
         assertApproxEqAbs(ERC20(vault).balanceOf(sender), expectedTTC, DEFAULT_APPROXIMATION_ERROR);
     }
+
+    function testSingleTokenJoin_AmountOut() public {
+        address sender = liquidSetUp();
+
+        // want to gain 0.5 TTC
+        // To gain q percent of ttc, you need to deposit B_i (q + 1) ^ (1 / W_i) - B_i
+        // For WETH: 166.6 * (0.5 + 1) ^ (1 / 0.5) - 166.6 = 208250000000000000000
+
+        // test weth
+        uint256 addedWETH = 208250000000000000000;
+
+        vm.startPrank(sender);
+        dealAndApprove(WETH_ADDRESS, sender, addedWETH);
+
+        vault.singleJoin_AmountOut(Constituent(WETH_ADDRESS, 50), 1 * PRECISION / 2);
+        vm.stopPrank();
+
+        // assert correct TTC amount was minted
+        uint256 expectedTTCSender = InitTTC + 1 * PRECISION / 2;
+        assertEq(ERC20(vault).balanceOf(sender), expectedTTCSender);
+
+        // assert correct WETH amount was reducted
+        assertEq(ERC20(WETH_ADDRESS).balanceOf(sender), 0);
+
+        // assert correct WETH amount was added
+        assertApproxEqAbs(ERC20(WETH_ADDRESS).balanceOf(address(vault)), InitWETH + addedWETH, DEFAULT_APPROXIMATION_ERROR);
+
+        // gain 0.5 TTC more by joining via WBTC
+        // 0.5 TTC / supplyTTC = 0.5 / 1.5 = 0.3333333333333333 = q
+        // So, to gain q percent of ttc, you need to deposit:
+        // In WBTC: 5 * (1/3 + 1) ^ (1 / 0.3) - 5 = 8044650859830620000
+
+        // test wbtcs
+        uint256 addedWBTC = 8044650859830620000;
+        uint256 apprxError = 8044650859830620000 * DEFAULT_APPROXIMATION_ERROR / 10 ** 18; // account for approximation errors
+        addedWBTC += apprxError; // account for approximation errors
+
+        vm.startPrank(sender);
+        dealAndApprove(WBTC_ADDRESS, sender, addedWBTC);
+
+        vault.singleJoin_AmountOut(Constituent(WBTC_ADDRESS, 30), 1 * PRECISION / 2);
+        vm.stopPrank();
+
+        // assert correct TTC amount was minted
+        expectedTTCSender += 1 * PRECISION / 2;
+        assertEq(ERC20(vault).balanceOf(sender), expectedTTCSender);
+
+        // assert correct WBTC amount was reducted
+        assertApproxEqAbs(ERC20(WBTC_ADDRESS).balanceOf(sender), apprxError, DEFAULT_APPROXIMATION_ERROR);
+
+        // assert correct WBTC amount was added
+        assertApproxEqAbs(ERC20(WBTC_ADDRESS).balanceOf(address(vault)), InitWBTC + addedWBTC - apprxError, DEFAULT_APPROXIMATION_ERROR);
+    }
 }

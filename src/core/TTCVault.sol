@@ -28,7 +28,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
         _;
     }
 
-    modifier _positiveIn_(uint256 _in) {
+    modifier _positiveInput_(uint256 _in) {
         require(_in > 0, "ERR_ZERO_IN");
         _;
     }
@@ -97,7 +97,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
     function allExit(uint256 _in) 
         external 
         _lock_
-        _positiveIn_(_in)
+        _positiveInput_(_in)
     {
         uint256 propOut = div(_in, totalSupply());
         TokenIO[] memory tokensOut = new TokenIO[](constituents.length);
@@ -118,7 +118,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
     function singleJoin_AmountIn(Constituent calldata constituentIn, uint256 amountIn) 
         external 
         _lock_
-        _positiveIn_(amountIn)
+        _positiveInput_(amountIn)
         _notFirstJoin_
     {
         uint256 balanceBefore = IERC20(constituentIn.token).balanceOf(address(this));
@@ -144,10 +144,14 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
         external 
         _lock_
         _notFirstJoin_
+        _positiveInput_(out)
     {
         uint256 q = div(out, totalSupply());
-        uint256 power = div(1, constituentIn.norm);
-        uint256 qPlus1Powered = pow(q + 1, power);
+        require (q < ONE, "ERR_FRACTION_OUT_TOO_HIGH");
+
+        uint256 qP1 = add(q, ONE);
+        uint256 power = 100 * ONE / constituentIn.norm;
+        uint256 qPlus1Powered = pow(qP1, power);
         
         uint256 balance = IERC20(constituentIn.token).balanceOf(address(this));
         uint256 mulByBalance = mul(qPlus1Powered, balance);
@@ -165,7 +169,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
     function singleExit(Constituent calldata constituentOut, uint256 _in) 
         external 
         _lock_
-        _positiveIn_(_in)
+        _positiveInput_(_in)
     {
         uint256 alpha = div(_in, totalSupply());
         uint oneSubAlpha = sub(ONE, alpha);
