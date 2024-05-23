@@ -218,4 +218,46 @@ contract TTCVaultTest is TtcTestContext {
         vault.allExit(0);
         vm.stopPrank();
     }
+
+    function testSingleTokenJoin_AmountIn() public {
+        address sender = liquidSetUp();
+
+        // adding 1 WETH
+        uint256 addedWETH = 1 * PRECISION;
+
+        vm.startPrank(sender);
+        dealAndApprove(WETH_ADDRESS, sender, addedWETH);
+
+        vault.singleJoin_AmountIn(Constituent(WETH_ADDRESS, 50), addedWETH);
+        vm.stopPrank();
+
+        // assert correct TTC amount was minted
+        // the added proportion `q` is: 299671034374982
+        // the total supply of TTC is 1 * 10 ** 18 = 1000000000000000000
+        // the new total supply of TTC is 1000000000000000000 * 2996710343749820 / ONE = 1002996710343749820
+        // the new balance of the sender is 1000299671034374982
+        // Source: https://www.wolframalpha.com/input?i=NumberForm%5B%28%5B%28166.6+%2B+1%29+%2F+%28166.6%29%5D+**+%281%2F2%29+-+1%29+*+10+**+18%2C+18%5D+
+        uint256 expectedTTC = InitTTC + 2996710343749820;
+        assertApproxEqAbs(ERC20(vault).balanceOf(sender), expectedTTC, DEFAULT_APPROXIMATION_ERROR);
+
+        // assert correct amount of WETH was added
+        assertEq(ERC20(WETH_ADDRESS).balanceOf(sender), 0);
+        assertEq(ERC20(WETH_ADDRESS).balanceOf(address(vault)), InitWETH + addedWETH);
+
+        // adding 1 WBTC
+        uint256 addedWBTC = 1 * PRECISION;
+
+        vm.startPrank(sender);
+        dealAndApprove(WBTC_ADDRESS, sender, addedWBTC);
+
+        vault.singleJoin_AmountIn(Constituent(WBTC_ADDRESS, 30), addedWBTC);
+        vm.stopPrank();
+
+        // assert correct TTC amount was minted
+        // the added proportion `q` is: 5621996843925814
+        // the total supply of TTC is 1002996710343749820
+        // q * supply = 0.05638844340020535 * 10 ** 18 = 56388443400205350 // https://www.wolframalpha.com/input?i=NumberForm%5B%28%5B%285+%2B+1%29+%2F+%285%29%5D+**+%280.3%29+-+1%29+*+1.002996710343749820%2C+19%5D+
+        expectedTTC += 56388443400205350;
+        assertApproxEqAbs(ERC20(vault).balanceOf(sender), expectedTTC, DEFAULT_APPROXIMATION_ERROR);
+    }
 }

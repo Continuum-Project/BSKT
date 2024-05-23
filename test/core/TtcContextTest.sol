@@ -16,6 +16,7 @@ contract TtcTestContext is Test {
     address constant TONCOIN_ADDRESS = 0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1;
 
     uint256 constant PRECISION = 10**18;
+    uint256 constant DEFAULT_APPROXIMATION_ERROR = 10**7; // 0.00001%
 
     // Together, these assets are worth 1mil dollars
     // Prices assumed for tokens:

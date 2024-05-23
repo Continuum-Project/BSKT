@@ -125,7 +125,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
         uint256 balanceAfter = add(balanceBefore, amountIn);
 
         uint256 fraction = div(balanceAfter, balanceBefore);
-        uint256 qP1 = powi(fraction, (constituentIn.norm));
+        uint256 qP1 = pow(fraction, constituentIn.norm * ONE / 100);
         uint256 q = sub(qP1, ONE);
 
         uint256 out = mul(totalSupply(), q);
