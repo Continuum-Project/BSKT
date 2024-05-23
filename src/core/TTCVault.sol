@@ -7,8 +7,9 @@ import "./TTC.sol";
 import "../types/Types.sol";
 import "./TTCMath.sol";
 import "../interface/ITTCVault.sol";
+import "./TTCFees.sol";
 
-contract TTCVault is ITTCVault, TTC, TTCMath {
+contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
     modifier _lock_() {
         require(!_locked, "ERR_REENTRANCY");
         _locked = true;
@@ -35,8 +36,6 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
         require(totalSupply() > 0, "ERR_FIRST_JOIN");
         _;
     }
-
-    uint256 constant BASE_REDEMPTION_FEE = 5 * ONE / 10000; // 0.05%
 
     bool private _locked;
     Constituent[] public constituents;
@@ -221,13 +220,12 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
         internal 
         _isLocked_
     {
-        uint256 fee = amountOut * BASE_REDEMPTION_FEE / ONE;
-        uint256 amountSubFee = sub(amountOut, fee);
+        uint256 amountOutSubFee = chargeBaseFeePlusMarginal(amountOut, constituentOut.norm);
 
-        _pushToSender(constituentOut.token, amountSubFee);
+        _pushToSender(constituentOut.token, amountOutSubFee);
         _burnSender(_in);
 
-        emit SINGLE_EXIT(msg.sender, constituentOut.token, _in, amountOut);
+        emit SINGLE_EXIT(msg.sender, constituentOut.token, _in, amountOutSubFee);
     }
 
     /*
@@ -258,8 +256,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath {
         _isLocked_ // for safety, should only be called from locked functions to prevent reentrancy
     {
         for (uint256 i = 0; i < constituents.length; i++) {
-            uint256 fee = _tokens[i].amount * BASE_REDEMPTION_FEE / ONE;
-            uint256 amountSubFee = sub(_tokens[i].amount, fee);
+            uint256 amountSubFee = chargeBaseFee(_tokens[i].amount);
             
             _pushToSender(_tokens[i].token, amountSubFee);
         }
