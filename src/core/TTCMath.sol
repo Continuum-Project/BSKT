@@ -96,8 +96,8 @@ contract TTCMath is TTCConstants {
         internal pure
         returns (uint)
     {
-        require(base >= MIN_POW_BASE, "ERR_pow_BASE_TOO_LOW");
-        require(base <= MAX_POW_BASE, "ERR_pow_BASE_TOO_HIGH");
+        require(base >= MIN_POW_BASE, "ERR_POW_BASE_TOO_LOW");
+        require(base <= MAX_POW_BASE, "ERR_POW_BASE_TOO_HIGH");
 
         uint whole  = floor(exp);   
         uint remain = sub(exp, whole);
