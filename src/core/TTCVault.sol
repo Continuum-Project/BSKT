@@ -3,9 +3,9 @@ pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./TTC.sol";
-import "./TTCTypes.sol";
+import "../types/Types.sol";
 
-contract TTCVault is TTC, TTCTypes {
+contract TTCVault is TTC {
     event ALL_JOIN (
         address indexed sender,
         uint256 out
@@ -37,7 +37,9 @@ contract TTCVault is TTC, TTCTypes {
     Constituent[] public constituents;
 
     constructor(Constituent[] memory initialConstituents) {
-        constituents = initialConstituents;
+        for (uint256 i = 0; i < initialConstituents.length; i++) {
+            constituents.push(initialConstituents[i]);
+        }
     }
 
     /*
