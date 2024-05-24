@@ -95,9 +95,4 @@ contract TtcTestContext is Test {
         vm.stopPrank();
         return sender;
     }
-
-    function chargeBaseFee(uint256 amount) internal view returns (uint256) {
-        uint256 fee = amount * vault.BASE_REDEMPTION_FEE() / vault.ONE();
-        return amount - fee;
-    }
 }

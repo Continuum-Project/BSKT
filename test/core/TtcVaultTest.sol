@@ -2,8 +2,9 @@
 pragma solidity 0.8.20;
 
 import "./TtcContextTest.sol";
+import "../../src/core/TTCFees.sol";
 
-contract TTCVaultTest is TtcTestContext {
+contract TTCVaultTest is TtcTestContext, TTCFees {
     function testInitialLiquidity() public {
         setUp();
         // Check initial liquidity
@@ -314,5 +315,62 @@ contract TTCVaultTest is TtcTestContext {
 
         // assert correct WBTC amount was added
         assertApproxEqAbs(ERC20(WBTC_ADDRESS).balanceOf(address(vault)), InitWBTC + addedWBTC - apprxError, DEFAULT_APPROXIMATION_ERROR);
+    }
+
+    function testSingleTokenExit() public {
+        address sender = liquidSetUp();
+
+        // exit alpha = 0.1 
+        // When exiting alpha percentage of TTC in token i, a trader gets B_i - B_i * (1 - alpha) ^ (1 / W_i) back
+        // For alpha = 0.1 and i = WETH, the amount of WETH to be returned is:
+        // 166.6 - 166.6 * (1 - 0.1) ^ (1 / 0.5) = 31654000000000000000
+        // The burned amount of TTC will then be 0.1 * 10 ** 18 = 100000000000000000 (0.1 TTC)
+
+        // test weth
+        uint256 expectedWETH = 31654000000000000000;
+        uint8 ethNorm = 50;
+
+        (uint256 balanced, uint256 unbalanced) = splitBalancedNotBalanced(expectedWETH, ethNorm);
+        uint256 unbalancedSubFee = chargeBaseFeePlusMarginal(unbalanced, ethNorm);
+        expectedWETH = balanced + unbalancedSubFee;
+
+        vm.startPrank(sender);
+        vault.singleExit(Constituent(WETH_ADDRESS, 50), 1 * PRECISION / 10);
+        vm.stopPrank();
+
+        // assert correct TTC amount was burned
+        uint256 expectedTTC = InitTTC - 1 * PRECISION / 10;
+        assertEq(ERC20(vault).balanceOf(sender), expectedTTC);
+
+        // assert correct WETH amount was returned
+        assertEq(ERC20(WETH_ADDRESS).balanceOf(sender), expectedWETH);
+
+        // assert correct WETH amount was reducted
+        assertEq(ERC20(WETH_ADDRESS).balanceOf(address(vault)), InitWETH - expectedWETH);
+
+        // test SHIB
+        // exit 10% TTC again (alpha = 0.1)
+        // For alpha to be 0.1, amount in should be 0.1 * 0.9 = 0.09 and i = SHIB, the amount of SHIB to be returned is:
+        // 3333333333.3 - 3333333333.3 * (1 - 0.1) ^ (1 / 0.1) = 2171071866311622614670000000
+        uint256 expectedSHIB = 2171071866311622614670000000;
+        uint8 shibNorm = 10;
+
+        (balanced, unbalanced) = splitBalancedNotBalanced(expectedSHIB, shibNorm);
+        unbalancedSubFee = chargeBaseFeePlusMarginal(unbalanced, shibNorm);
+        expectedSHIB = balanced + unbalancedSubFee;
+
+        vm.startPrank(sender);
+        vault.singleExit(Constituent(SHIB_ADDRESS, 10), 9 * PRECISION / 100);
+        vm.stopPrank();
+
+        // assert correct TTC amount was burned
+        expectedTTC -= 9 * PRECISION / 100;
+        assertEq(ERC20(vault).balanceOf(sender), expectedTTC);
+
+        // assert correct SHIB amount was returned
+        assertEq(ERC20(SHIB_ADDRESS).balanceOf(sender), expectedSHIB);
+
+        // assert correct SHIB amount was reducted
+        assertEq(ERC20(SHIB_ADDRESS).balanceOf(address(vault)), InitSHIB - expectedSHIB);
     }
 }

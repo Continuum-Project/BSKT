@@ -174,7 +174,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
         uint256 alpha = div(_in, totalSupply());
         uint oneSubAlpha = sub(ONE, alpha);
 
-        uint256 power = div(1, constituentOut.norm);
+        uint256 power = 100 * ONE / constituentOut.norm;
         uint256 poweredTerm = pow(oneSubAlpha, power);
 
         uint256 balance = IERC20(constituentOut.token).balanceOf(address(this));
