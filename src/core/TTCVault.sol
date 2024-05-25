@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {console} from "forge-std/Test.sol";
 
 import "./TTC.sol";
-import "../types/Types.sol";
+import "../types/Vault.sol";
 import "./TTCMath.sol";
 import "../interface/ITTCVault.sol";
 import "./TTCFees.sol";

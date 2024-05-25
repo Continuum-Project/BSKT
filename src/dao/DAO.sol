@@ -16,8 +16,7 @@ contract ContinuumDAO is
     GovernorCountingSimple,
     GovernorVotes,
     GovernorVotesQuorumFraction,
-    GovernorTimelockControl,
-    Bounty
+    GovernorTimelockControl
 {
     string constant NAME = "Continuum DAO";
     uint8 constant QUORUM_PERCENTAGE = 4;

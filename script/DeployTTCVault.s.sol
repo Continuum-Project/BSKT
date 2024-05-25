@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Script} from "forge-std/Script.sol";
 import {TTCVault} from "../src/core/TTCVault.sol";
-import "../src/types/Types.sol";
+import "../src/types/Vault.sol";
 
 contract DeployTTCVault is Script {
     address constant WETH_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
