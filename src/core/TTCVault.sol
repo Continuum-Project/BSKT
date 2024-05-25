@@ -12,7 +12,7 @@ import "../interface/ITTCVault.sol";
 import "./TTCFees.sol";
 import "../dao/Bounty.sol";
 
-contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees, BountyContract, Ownable {
+contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
     modifier _lock_() {
         require(!_locked, "ERR_REENTRANCY");
         _locked = true;
@@ -36,29 +36,34 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees, BountyContract, Ownable {
     }
 
     modifier _supplyNonZero_() {
-        require(totalSupply() > 0, "ERR_SUPPLY_IS_ZERO");
+        require(ttc.totalSupply() > 0, "ERR_SUPPLY_IS_ZERO");
         _;
     }
 
     bool private _locked;
     Constituent[] public constituents;
+    BountyContract public bountyContract;
+    TTC public ttc;
 
     constructor(
-        Constituent[] memory initialConstituents, 
-        InitialETHDataFeeds[] memory _dataFeeds, 
-        address wethAddress) BountyContract(_dataFeeds, wethAddress) Ownable(msg.sender)
+        Constituent[] memory initialConstituents,
+        address bountyAddress
+    ) Ownable(msg.sender)
     {
         for (uint256 i = 0; i < initialConstituents.length; i++) {
             constituents.push(initialConstituents[i]);
         }
+
+        bountyContract = BountyContract(bountyAddress);
+        ttc = new TTC(); // sets the vault as the Owner of TTC
     }
 
     function allJoin_Initial(TokenIO[] calldata tokens)
         external
         _lock_
     {
-        require(totalSupply() == 0, "ERR_NOT_FIRST_JOIN");
-        _allJoin(tokens, 1 * 10 ** decimals()); // mint 1 TTC, sets the initial price
+        require(ttc.totalSupply() == 0, "ERR_NOT_FIRST_JOIN");
+        _allJoin(tokens, 10 ** ttc.decimals()); // mint 1 TTC, sets the initial price
     }
 
     /*
@@ -92,7 +97,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees, BountyContract, Ownable {
             }
         }
 
-        uint256 out = mul(totalSupply(), minProp);
+        uint256 out = mul(ttc.totalSupply(), minProp);
         _allJoin_Out(out);
     }
 
@@ -105,7 +110,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees, BountyContract, Ownable {
         _lock_
         _positiveInput_(_in)
     {
-        uint256 propOut = div(_in, totalSupply());
+        uint256 propOut = div(_in, ttc.totalSupply());
         TokenIO[] memory tokensOut = new TokenIO[](constituents.length);
         for (uint256 i = 0; i < constituents.length; i++) {
             uint256 balance = IERC20(constituents[i].token).balanceOf(address(this));
@@ -134,7 +139,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees, BountyContract, Ownable {
         uint256 qP1 = pow(fraction, constituentIn.norm * ONE / 100);
         uint256 q = sub(qP1, ONE);
 
-        uint256 out = mul(totalSupply(), q);
+        uint256 out = mul(ttc.totalSupply(), q);
 
         _singleJoin(constituentIn, out, amountIn);
     }
@@ -152,7 +157,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees, BountyContract, Ownable {
         _supplyNonZero_
         _positiveInput_(out)
     {
-        uint256 q = div(out, totalSupply());
+        uint256 q = div(out, ttc.totalSupply());
         require (q < ONE, "ERR_FRACTION_OUT_TOO_HIGH");
 
         uint256 qP1 = add(q, ONE);
@@ -177,7 +182,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees, BountyContract, Ownable {
         _lock_
         _positiveInput_(_in)
     {
-        uint256 alpha = div(_in, totalSupply());
+        uint256 alpha = div(_in, ttc.totalSupply());
         uint oneSubAlpha = sub(ONE, alpha);
 
         uint256 power = 100 * ONE / constituentOut.norm;
@@ -201,7 +206,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees, BountyContract, Ownable {
         _isLocked_
     {
         _pullFromSender(constituentIn.token, amountIn);
-        _mintSender(out);
+        ttc.mintSender(out);
 
         emit SINGLE_JOIN(msg.sender, constituentIn.token, out, amountIn);
     }
@@ -221,7 +226,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees, BountyContract, Ownable {
         uint256 amountOutSubFee = add(balanced, unbalancedSubFee);
 
         _pushToSender(constituentOut.token, amountOutSubFee);
-        _burnSender(_in);
+        ttc.burnSender(_in);
 
         emit SINGLE_EXIT(msg.sender, constituentOut.token, _in, amountOutSubFee);
     }
@@ -240,7 +245,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees, BountyContract, Ownable {
             _pullFromSender(_tokens[i].token, _tokens[i].amount);
         }
 
-        _mintSender(_out);
+        ttc.mintSender(_out);
         emit ALL_JOIN(msg.sender, _out);
     }
 
@@ -248,7 +253,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees, BountyContract, Ownable {
         internal 
         _isLocked_
     {
-        uint propIn = div(out, totalSupply()); // the proportion of each token to deposit in order to get "out" amount
+        uint propIn = div(out, ttc.totalSupply()); // the proportion of each token to deposit in order to get "out" amount
         TokenIO[] memory tokensIn = new TokenIO[](constituents.length);
         for (uint256 i = 0; i < constituents.length; i++) {
             uint256 balance = IERC20(constituents[i].token).balanceOf(address(this));
@@ -274,7 +279,7 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees, BountyContract, Ownable {
             _pushToSender(_tokens[i].token, amountSubFee);
         }
 
-        _burnSender(_in);
+        ttc.burnSender(_in);
         emit ALL_EXIT(msg.sender, _in);
     }
 

@@ -50,7 +50,10 @@ contract TtcTestContext is Test {
         initialDataFeeds[1] = InitialETHDataFeeds(SHIB_ADDRESS, 0x8dD1CD88F43aF196ae478e91b9F5E4Ac69A97C61);
         // no data feed for TONCOIN
 
-        vault = new TTCVault(initialConstituents, initialDataFeeds, WETH_ADDRESS);
+        BountyContract bounty = new BountyContract(initialDataFeeds, WETH_ADDRESS);
+        address bountyAddress = address(bounty);
+
+        vault = new TTCVault(initialConstituents, bountyAddress);
     }
 
     // initializes the vault with the initial liquidity of $1mil dollars equivalent
