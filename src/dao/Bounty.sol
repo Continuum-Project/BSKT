@@ -35,7 +35,7 @@ contract BountyContract is IBounty, Ownable {
         bountyCount = 0;
     }
 
-    function createBounty(address _tokenIn, address _tokenOut, uint256 _amountOut)
+    function createBounty(address _tokenWant, address _tokenGive, uint256 _amountGive)
         external 
         onlyOwner 
         returns(uint256)
@@ -43,23 +43,22 @@ contract BountyContract is IBounty, Ownable {
         Bounty memory bounty = Bounty({
             bountyId: bountyCount,
             creator: msg.sender, // should be DAO
-            tokenIn: _tokenIn,
-            tokenOut: _tokenOut,
-            amountOut: _amountOut,
+            tokenWant: _tokenWant,
+            tokenGive: _tokenGive,
+            amountGive: _amountGive,
             status: BountyStatus.ACTIVE
         });
 
         bounties[bountyCount] = bounty;
         bountyCount++;
 
-        emit BOUNTY_CREATED(msg.sender, bounty.bountyId, _amountOut);
+        emit BOUNTY_CREATED(msg.sender, bounty.bountyId, _amountGive);
 
         return bounty.bountyId;
     }
 
     function fulfillBounty(uint256 _bountyId, uint256 amountIn) 
         external 
-        onlyOwner
         _activeBounty_(_bountyId)
     {
         _fulfillBounty(bounties[_bountyId], amountIn);
@@ -79,26 +78,26 @@ contract BountyContract is IBounty, Ownable {
 
     function _fulfillBounty(Bounty memory bounty, uint256 amountIn) 
         internal
-        _hasDatafeed_(bounty.tokenIn)
-        _hasDatafeed_(bounty.tokenOut)
+        _hasDatafeed_(bounty.tokenWant)
+        _hasDatafeed_(bounty.tokenGive)
     {
         address fulfiller = msg.sender;
         address creator = bounty.creator;
 
         // find value of tokenIn 
-        address tokenIn = bounty.tokenIn;
+        address tokenIn = bounty.tokenWant;
         uint256 tokenInValue = _value(tokenIn, amountIn);
 
         // find value of tokenOut
-        address tokenOut = bounty.tokenOut;
-        uint256 tokenOutValue = _value(tokenOut, bounty.amountOut);
+        address tokenOut = bounty.tokenGive;
+        uint256 tokenOutValue = _value(tokenOut, bounty.amountGive);
 
         // check if the fulfiller has provided enough value
         require(tokenInValue >= tokenOutValue, "Value discrepancy too high");
 
         // transfer the tokens
         ERC20(tokenIn).transferFrom(fulfiller, creator, amountIn);
-        ERC20(tokenOut).transferFrom(creator, fulfiller, bounty.amountOut);
+        ERC20(tokenOut).transferFrom(creator, fulfiller, bounty.amountGive);
     }
 
     function _value(address _token, uint256 _amount) 

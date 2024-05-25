@@ -4,9 +4,9 @@ pragma solidity ^0.8.20;
 struct Bounty {
     uint256 bountyId;
     address creator;
-    address tokenIn; // the token we want to get rid of
-    address tokenOut; // the token we actually want to add
-    uint256 amountOut; // the amount of token we are giving out
+    address tokenWant; // the token we want to get
+    address tokenGive; // the token we want to give
+    uint256 amountGive; // the amount of token we are giving out
     BountyStatus status;
 }
 

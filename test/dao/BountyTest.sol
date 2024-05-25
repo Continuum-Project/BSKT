@@ -42,20 +42,49 @@ contract BountyTest is Test {
     function testCreateBounty() public {
         address owner = setUp();
 
-        console.log("DECIMALS BTC: ", ERC20(WBTC_ADDRESS).decimals());
-
-        uint256 wbtcValue = _value(WBTC_ADDRESS, ERC20(WBTC_ADDRESS).decimals()); // 1 BTC
-
-        console.log("WBTC VALUE: ", wbtcValue);
+        uint256 wbtcValue = _value(WBTC_ADDRESS, 1); // 1 BTC
+        uint256 shibValue = _value(SHIB_ADDRESS, 1); // 2400000000 SHIB
+        uint256 shibInBtc = wbtcValue * 10 ** 8 / shibValue; // get shib amount in one BTC
 
         // create a bounty to get 1 BTC for 2400000000 SHIB
-        bounty.createBounty(WBTC_ADDRESS, SHIB_ADDRESS, 2400000000 * 10 ** 18); // 1 BTC equivalent to 2400000000 SHIB
+        vm.startPrank(owner);
+        dealAndApprove(SHIB_ADDRESS, owner, shibInBtc); // deal SHIB amount - not required for this test, useful for fulfillment
+        bounty.createBounty(WBTC_ADDRESS, SHIB_ADDRESS, shibInBtc); // 1 BTC equivalent to 2400000000 SHIB
+        vm.stopPrank();
 
+        Bounty memory b = bounty.getBounty(0);
+        assertEq(b.amountGive, shibInBtc);
+        assertEq(b.creator, owner);
+        assertEq(b.tokenWant, WBTC_ADDRESS);
+        assertEq(b.tokenGive, SHIB_ADDRESS);
+        assertTrue(b.status == BountyStatus.ACTIVE);
+
+    }
+
+    function testFulfillBounty() public {
+        testCreateBounty(); // create a bounty, also tests createBounty
+
+        address fulfiller = makeAddr("fulfiller");
+
+        uint256 fulfilmentAmountBTC =  10 ** ERC20(WBTC_ADDRESS).decimals();
+
+        vm.startPrank(fulfiller);
+        dealAndApprove(WBTC_ADDRESS, fulfiller, fulfilmentAmountBTC); // deal 1 btc
+        bounty.fulfillBounty(0, fulfilmentAmountBTC); // fulfill the bounty, 1 BTC
+        vm.stopPrank();
+
+        Bounty memory b = bounty.getBounty(0);
+        assertTrue(b.status == BountyStatus.FULFILLED);
     }
 
     function _value(address _token, uint256 _amount) internal view returns(uint256) {
         AggregatorV3Interface priceFeed = priceFeeds[_token];
         (, int price,,,) = priceFeed.latestRoundData();
         return uint256(price) * _amount;
+    }
+
+    function dealAndApprove(address token, address sender, uint256 amount) public {
+        ERC20(token).approve(address(bounty), amount);
+        deal(token, sender, amount);
     }
 }
