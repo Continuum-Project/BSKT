@@ -45,7 +45,12 @@ contract TtcTestContext is Test {
         }
         vm.selectFork(mainnetFork);
 
-        vault = new TTCVault(initialConstituents);
+        InitialETHDataFeeds[] memory initialDataFeeds = new InitialETHDataFeeds[](4);
+        initialDataFeeds[0] = InitialETHDataFeeds(WBTC_ADDRESS, 0xdeb288F737066589598e9214E782fa5A8eD689e8);
+        initialDataFeeds[1] = InitialETHDataFeeds(SHIB_ADDRESS, 0x8dD1CD88F43aF196ae478e91b9F5E4Ac69A97C61);
+        // no data feed for TONCOIN
+
+        vault = new TTCVault(initialConstituents, initialDataFeeds, WETH_ADDRESS);
     }
 
     // initializes the vault with the initial liquidity of $1mil dollars equivalent

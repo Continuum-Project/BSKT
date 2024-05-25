@@ -11,14 +11,14 @@ contract DeployTTCVault is Script {
     address constant SHIB_ADDRESS = 0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE;
     address constant TONCOIN_ADDRESS = 0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1;
 
-    function run() external returns(TTCVault) {
-        Constituent[] memory initialConstituents = getInitialConstituents();
-        vm.startBroadcast();
-        TTCVault ttcVault = new TTCVault(initialConstituents);
-        vm.stopBroadcast();
+    // function run() external returns(TTCVault) {
+    //     Constituent[] memory initialConstituents = getInitialConstituents();
+    //     vm.startBroadcast();
+    //     TTCVault ttcVault = new TTCVault(initialConstituents);
+    //     vm.stopBroadcast();
 
-        return ttcVault;
-    }
+    //     return ttcVault;
+    // }
 
     function getInitialConstituents() public pure returns (Constituent[] memory){
         Constituent[] memory initialConstituents = new Constituent[](4);
