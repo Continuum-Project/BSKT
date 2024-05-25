@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "../types/Bounty.sol";
+import "../types/CBounty.sol";
 
 interface IBountyContract {
     event BOUNTY_CREATED (

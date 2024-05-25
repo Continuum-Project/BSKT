@@ -3,7 +3,9 @@ pragma solidity ^0.8.20;
 
 import {Script} from "forge-std/Script.sol";
 import {TTCVault} from "../src/core/TTCVault.sol";
-import "../src/types/Vault.sol";
+import {BountyContract} from "../src/dao/CBounty.sol";
+import "../src/types/CBounty.sol";
+import "../src/types/CVault.sol";
 
 contract DeployTTCVault is Script {
     address constant WETH_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -11,16 +13,19 @@ contract DeployTTCVault is Script {
     address constant SHIB_ADDRESS = 0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE;
     address constant TONCOIN_ADDRESS = 0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1;
 
-    // function run() external returns(TTCVault) {
-    //     Constituent[] memory initialConstituents = getInitialConstituents();
-    //     vm.startBroadcast();
-    //     TTCVault ttcVault = new TTCVault(initialConstituents);
-    //     vm.stopBroadcast();
+    function run() external returns(TTCVault, BountyContract) {
+        Constituent[] memory initialConstituents = getInitialConstituents();
+        InitialETHDataFeeds[] memory initialDataFeeds = getInitialDataFeeds();
 
-    //     return ttcVault;
-    // }
+        vm.startBroadcast();
+        BountyContract bounty = new BountyContract(initialDataFeeds, WETH_ADDRESS);
+        TTCVault ttcVault = new TTCVault(initialConstituents, address(bounty));
+        vm.stopBroadcast();
 
-    function getInitialConstituents() public pure returns (Constituent[] memory){
+        return (ttcVault, bounty);
+    }
+
+    function getInitialConstituents() internal pure returns (Constituent[] memory){
         Constituent[] memory initialConstituents = new Constituent[](4);
         initialConstituents[0] = Constituent(WETH_ADDRESS, 50);
         initialConstituents[1] = Constituent(WBTC_ADDRESS, 30);
@@ -29,6 +34,16 @@ contract DeployTTCVault is Script {
 
         return initialConstituents;
     }
+
+    function getInitialDataFeeds() internal pure returns(InitialETHDataFeeds[] memory) {
+        InitialETHDataFeeds[] memory initialDataFeeds = new InitialETHDataFeeds[](4);
+        initialDataFeeds[0] = InitialETHDataFeeds(WBTC_ADDRESS, 0xdeb288F737066589598e9214E782fa5A8eD689e8);
+        initialDataFeeds[1] = InitialETHDataFeeds(SHIB_ADDRESS, 0x8dD1CD88F43aF196ae478e91b9F5E4Ac69A97C61);
+        // no data feed for TONCOIN
+
+        return initialDataFeeds;
+    }
+
 
     // function getNullTokens() public pure returns (TokenIO[] memory) {
     //     TokenIO[] memory tokens = new TokenIO[](4);

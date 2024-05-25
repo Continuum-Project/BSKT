@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.20;
 
-import "../types/Vault.sol";
+import "../types/CVault.sol";
 
 interface ITTCVault {
     event ALL_JOIN (

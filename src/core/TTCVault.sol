@@ -5,12 +5,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {console} from "forge-std/Test.sol";
 
 import "./TTC.sol";
-import "../types/Vault.sol";
-import "../types/Bounty.sol";
+import "../types/CVault.sol";
+import "../types/CBounty.sol";
 import "./TTCMath.sol";
 import "../interface/ITTCVault.sol";
 import "./TTCFees.sol";
-import "../dao/Bounty.sol";
+import "../dao/CBounty.sol";
 
 contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
     modifier _lock_() {

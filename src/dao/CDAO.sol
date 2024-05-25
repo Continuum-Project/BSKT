@@ -9,7 +9,7 @@ import {GovernorTimelockControl} from "@openzeppelin/contracts/governance/extens
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
-import {Bounty} from "./Bounty.sol";
+import {Bounty} from "./CBounty.sol";
 
 contract ContinuumDAO is
     Governor,

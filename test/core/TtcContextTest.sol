@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import "../../src/core/TTCVault.sol";
-import "../../src/types/Vault.sol";
+import "../../src/types/CVault.sol";
 
 contract TtcTestContext is Test {
     TTCVault public vault;
