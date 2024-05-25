@@ -45,4 +45,6 @@ interface ITTCVault {
     
     function singleExit(Constituent calldata constituentOut, uint256 _in) 
         external;
+
+    function testOwnership() external; // REMOVE THIS AFTER AN ACTUAL IMPLEMENTATION OF ONLYOWNER FUNCTION EXISTS
 }

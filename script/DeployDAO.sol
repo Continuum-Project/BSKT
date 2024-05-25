@@ -28,6 +28,19 @@ contract DeployDAO is Script{
         timelock.grantRole(timelock.DEFAULT_ADMIN_ROLE(), address(dao));
         timelock.renounceRole(timelock.DEFAULT_ADMIN_ROLE(), msg.sender); // renounce admin role
 
+        assertions(dao, timelock, vault);
         vm.stopBroadcast();
+    }
+
+    function assertions(ContinuumDAO dao, TimelockController timeLock, TTCVault vault) public {
+        // make sure the DAO has the correct roles
+        assert(timeLock.hasRole(timeLock.PROPOSER_ROLE(), address(dao)));
+        assert(timeLock.hasRole(timeLock.EXECUTOR_ROLE(), address(dao)));
+        assert(timeLock.hasRole(timeLock.DEFAULT_ADMIN_ROLE(), address(dao)));
+        assert(!timeLock.hasRole(timeLock.DEFAULT_ADMIN_ROLE(), msg.sender));
+
+        // make sure sender cannot access vault's methods that are onlyOwner
+        vm.expectRevert();
+        vault.testOwnership();
     }
 }

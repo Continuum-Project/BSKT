@@ -196,6 +196,8 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
         _singleExit(constituentOut, amountOut, _in);
     }
 
+    function testOwnership() public onlyOwner {}
+
     /*
      * @notice single-token exit, takes an amount of token a user is willing to receive
      * @param constituentOut The token to exit
