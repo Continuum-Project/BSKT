@@ -83,20 +83,20 @@ contract BountyContract is IBountyContract {
         address fulfiller = msg.sender;
         address creator = bounty.creator;
 
-        // find value of tokenIn 
-        address tokenIn = bounty.tokenWant;
-        uint256 tokenInValue = _value(tokenIn, amountIn);
+        // find value of tokenWant 
+        address tokenWant = bounty.tokenWant;
+        uint256 tokenWantValue = _value(tokenWant, amountIn);
 
-        // find value of tokenOut
-        address tokenOut = bounty.tokenGive;
-        uint256 tokenOutValue = _value(tokenOut, bounty.amountGive);
+        // find value of tokenGive
+        address tokenGive = bounty.tokenGive;
+        uint256 tokenGiveValue = _value(tokenGive, bounty.amountGive);
 
         // check if the fulfiller has provided enough value
-        require(tokenInValue >= tokenOutValue, "Value discrepancy too high");
+        require(tokenWantValue >= tokenGiveValue, "Value discrepancy too high");
 
         // transfer the tokens
-        ERC20(tokenIn).transferFrom(fulfiller, creator, amountIn);
-        ERC20(tokenOut).transferFrom(creator, fulfiller, bounty.amountGive);
+        ERC20(tokenWant).transferFrom(fulfiller, creator, amountIn);
+        ERC20(tokenGive).transferFrom(creator, fulfiller, bounty.amountGive);
     }
 
     function _value(address _token, uint256 _amount) 
