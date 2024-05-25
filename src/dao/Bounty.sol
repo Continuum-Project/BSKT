@@ -6,10 +6,10 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
 
-import {IBounty, WETHDataFeed} from "../interface/IBounty.sol";
+import {IBountyContract, WETHDataFeed} from "../interface/IBounty.sol";
 import {InitialETHDataFeeds, BountyStatus, Bounty} from "../types/Bounty.sol";
 
-contract BountyContract is IBounty, Ownable {
+contract BountyContract is IBountyContract {
     modifier _activeBounty_(uint256 _bountyId) {
         require(bounties[_bountyId].status == BountyStatus.ACTIVE, "Bounty not active");
         _;
@@ -26,7 +26,7 @@ contract BountyContract is IBounty, Ownable {
     uint256 bountyCount;
 
     // Data Feed for WETH should NOT be provided in _dataFeeds
-    constructor(InitialETHDataFeeds[] memory _dataFeeds, address wethAddress) Ownable(msg.sender) {
+    constructor(InitialETHDataFeeds[] memory _dataFeeds, address wethAddress) {
         for (uint256 i = 0; i < _dataFeeds.length; i++) {
             dataFeed[_dataFeeds[i].token] = AggregatorV3Interface(_dataFeeds[i].dataFeed);
         }
@@ -37,7 +37,6 @@ contract BountyContract is IBounty, Ownable {
 
     function createBounty(address _tokenWant, address _tokenGive, uint256 _amountGive)
         external 
-        onlyOwner 
         returns(uint256)
     {
         Bounty memory bounty = Bounty({

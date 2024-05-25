@@ -6,11 +6,13 @@ import {console} from "forge-std/Test.sol";
 
 import "./TTC.sol";
 import "../types/Vault.sol";
+import "../types/Bounty.sol";
 import "./TTCMath.sol";
 import "../interface/ITTCVault.sol";
 import "./TTCFees.sol";
+import "../dao/Bounty.sol";
 
-contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
+contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees, BountyContract, Ownable {
     modifier _lock_() {
         require(!_locked, "ERR_REENTRANCY");
         _locked = true;
@@ -41,7 +43,11 @@ contract TTCVault is ITTCVault, TTC, TTCMath, TTCFees {
     bool private _locked;
     Constituent[] public constituents;
 
-    constructor(Constituent[] memory initialConstituents) {
+    constructor(
+        Constituent[] memory initialConstituents, 
+        InitialETHDataFeeds[] memory _dataFeeds, 
+        address wethAddress) BountyContract(_dataFeeds, wethAddress) Ownable(msg.sender)
+    {
         for (uint256 i = 0; i < initialConstituents.length; i++) {
             constituents.push(initialConstituents[i]);
         }

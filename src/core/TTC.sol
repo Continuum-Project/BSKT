@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./TTCConstants.sol";
 
-contract TTC is ERC20, Ownable, TTCConstants {
-    constructor() ERC20(TTC_NAME, TTC_SYMBOL) Ownable(msg.sender)  {}
+contract TTC is ERC20, TTCConstants {
+    constructor() ERC20(TTC_NAME, TTC_SYMBOL)  {}
 
     function mint(address to, uint256 amount) internal {
         _mint(to, amount);

@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "../types/Bounty.sol";
 
-interface IBounty {
+interface IBountyContract {
     event BOUNTY_CREATED (
         address indexed sender, 
         uint256 indexed bountyId,
