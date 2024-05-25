@@ -53,6 +53,6 @@ contract WETHDataFeed is AggregatorV3Interface {
     }
 
     function latestRoundData() external pure override returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound) {
-        return (0, 1, 0, 0, 0);
+        return (0, 10**18, 0, 0, 0);
     }
 }
