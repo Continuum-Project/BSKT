@@ -154,7 +154,7 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
 
     function testAllExit() public {
         address sender = liquidSetUp();
-
+        
         // exit half of TTC
         uint256 _in = InitTTC / 2;
 
@@ -163,7 +163,7 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
         vm.stopPrank();
 
         // assert that half of TTC was burned
-        assertEq(ERC20(vault.ttc()).balanceOf(sender), InitTTC / 2);
+        assertEq(ERC20(address(vault.ttc())).balanceOf(sender), InitTTC / 2);
         assertEq(ERC20(vault.ttc()).totalSupply(), InitTTC / 2);
 
         // assert that half of the tokens were returned (with base fee)

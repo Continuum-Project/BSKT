@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./TTCConstants.sol";
 
+import {console} from "forge-std/Test.sol";
+
 contract TTC is ERC20, TTCConstants, Ownable {
     constructor() ERC20(TTC_NAME, TTC_SYMBOL) Ownable(msg.sender) {}
 
@@ -15,27 +17,5 @@ contract TTC is ERC20, TTCConstants, Ownable {
 
     function burn(address from, uint256 amount) external onlyOwner {
         _burn(from, amount);
-    }
-
-    /*
-     * @notice Mint tokens to the sender
-     * @param _amount The amount of tokens to mint
-     */
-    function mintSender(uint256 _amount) 
-        external
-        onlyOwner
-    {
-        _mint(msg.sender, _amount);
-    }
-
-    /*
-     * @notice Burn tokens from the sender
-     * @param _amount The amount of tokens to burn
-     */
-    function burnSender(uint256 _amount) 
-        external
-        onlyOwner
-    {
-        _burn(msg.sender, _amount);
     }
 }

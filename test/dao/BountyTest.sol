@@ -58,7 +58,6 @@ contract BountyTest is Test {
         assertEq(b.tokenWant, WBTC_ADDRESS);
         assertEq(b.tokenGive, SHIB_ADDRESS);
         assertTrue(b.status == BountyStatus.ACTIVE);
-
     }
 
     function testFulfillBounty() public {

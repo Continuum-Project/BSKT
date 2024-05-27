@@ -203,14 +203,14 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
      * @param constituentOut The token to exit
      * @param amountOut The amount of tokens to receive
      */
-    function _singleJoin(Constituent calldata constituentIn, uint256 out, uint256 amountIn) 
+    function _singleJoin(Constituent calldata constituentIn, uint256 _out, uint256 amountIn) 
         internal 
         _isLocked_
     {
         _pullFromSender(constituentIn.token, amountIn);
-        ttc.mintSender(out);
+        ttc.mint(msg.sender, _out);
 
-        emit SINGLE_JOIN(msg.sender, constituentIn.token, out, amountIn);
+        emit SINGLE_JOIN(msg.sender, constituentIn.token, _out, amountIn);
     }
 
     /*
@@ -228,7 +228,7 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
         uint256 amountOutSubFee = add(balanced, unbalancedSubFee);
 
         _pushToSender(constituentOut.token, amountOutSubFee);
-        ttc.burnSender(_in);
+        ttc.burn(msg.sender, _in);
 
         emit SINGLE_EXIT(msg.sender, constituentOut.token, _in, amountOutSubFee);
     }
@@ -247,7 +247,7 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
             _pullFromSender(_tokens[i].token, _tokens[i].amount);
         }
 
-        ttc.mintSender(_out);
+        ttc.mint(msg.sender, _out);
         emit ALL_JOIN(msg.sender, _out);
     }
 
@@ -281,7 +281,7 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
             _pushToSender(_tokens[i].token, amountSubFee);
         }
 
-        ttc.burnSender(_in);
+        ttc.burn(msg.sender, _in);
         emit ALL_EXIT(msg.sender, _in);
     }
 
