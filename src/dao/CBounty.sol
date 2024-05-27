@@ -21,6 +21,11 @@ contract BountyContract is IBountyContract, Ownable {
         _;
     }
 
+    modifier _nonDuplicateDatafeed_(address _token) {
+        require(address(dataFeed[_token]) == address(0), "Datafeed already exists");
+        _;
+    }
+
     mapping(uint256 => Bounty) public bounties;
     mapping(address => AggregatorV3Interface) internal dataFeed;
 
@@ -75,6 +80,16 @@ contract BountyContract is IBountyContract, Ownable {
         returns (Bounty memory)
     {
         return bounties[_bountyId];
+    }
+
+    function addPriceFeed(address _token, address _dataFeed) 
+        external 
+        _nonDuplicateDatafeed_(_token) // not really needed, since only dao can invoke it
+        onlyOwner
+    {
+        dataFeed[_token] = AggregatorV3Interface(_dataFeed);
+
+        emit PRICE_FEED_ADDED(_token, _dataFeed);
     }
 
     function _fulfillBounty(Bounty memory bounty, uint256 amountIn) 

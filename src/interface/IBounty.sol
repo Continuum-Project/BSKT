@@ -18,6 +18,11 @@ interface IBountyContract {
         uint256 indexed bountyId
     );
 
+    event PRICE_FEED_ADDED (
+        address indexed token,
+        address indexed dataFeed
+    );
+
     function createBounty(
         address _tokenIn,
         address _tokenOut,
@@ -27,6 +32,8 @@ interface IBountyContract {
     function fulfillBounty(uint256 _bountyId, uint256 amountIn) external;
 
     function getBounty(uint256 _bountyId) external view returns (Bounty memory);
+
+    function addPriceFeed(address _token, address _dataFeed) external;
 }
 
 // Mock contract for better code readability in the Bounty contract
