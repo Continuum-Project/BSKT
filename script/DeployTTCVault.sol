@@ -18,10 +18,10 @@ contract DeployTTCVault is Script {
     function run() external returns(TTCVault, BountyContract) {
         Constituent[] memory initialConstituents = getInitialConstituents();
         InitialETHDataFeeds[] memory initialDataFeeds = getInitialDataFeeds();
-        console.log(initialDataFeeds[0].token);
-
         vm.startBroadcast();
         BountyContract bounty = new BountyContract(initialDataFeeds, WETH_ADDRESS);
+        bounty.transferOwnership(address(this));
+
         TTCVault ttcVault = new TTCVault(initialConstituents, address(bounty));
         vm.stopBroadcast();
 

@@ -8,6 +8,7 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interf
 
 import {IBountyContract, WETHDataFeed} from "../interface/IBounty.sol";
 import {InitialETHDataFeeds, BountyStatus, Bounty} from "../types/CBounty.sol";
+import {console} from "forge-std/Test.sol";
 
 contract BountyContract is IBountyContract, Ownable {
     modifier _activeBounty_(uint256 _bountyId) {

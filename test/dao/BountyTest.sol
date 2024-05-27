@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import "../../src/dao/CBounty.sol";
+import {DeployTTCVault} from "../../script/DeployTTCVault.sol";
 
 contract BountyTest is Test {
     BountyContract public bounty;
@@ -22,21 +23,14 @@ contract BountyTest is Test {
         }
         vm.selectFork(mainnetFork);
 
-        InitialETHDataFeeds[] memory initialDataFeeds = new InitialETHDataFeeds[](4);
-        initialDataFeeds[0] = InitialETHDataFeeds(WBTC_ADDRESS, 0xdeb288F737066589598e9214E782fa5A8eD689e8);
-        initialDataFeeds[1] = InitialETHDataFeeds(SHIB_ADDRESS, 0x8dD1CD88F43aF196ae478e91b9F5E4Ac69A97C61);
-
-        address sender = makeAddr("sender");
-
-        vm.startPrank(sender);
-        bounty = new BountyContract(initialDataFeeds, WETH_ADDRESS);
-        vm.stopPrank();
+        DeployTTCVault vaultDeployer = new DeployTTCVault();
+        (, bounty) = vaultDeployer.run();
 
         // set price feeds manually
         priceFeeds[WBTC_ADDRESS] = AggregatorV3Interface(0xdeb288F737066589598e9214E782fa5A8eD689e8);
         priceFeeds[SHIB_ADDRESS] = AggregatorV3Interface(0x8dD1CD88F43aF196ae478e91b9F5E4Ac69A97C61);
-
-        return sender;
+        
+        return address(vaultDeployer);
     }
 
     function testCreateBounty() public {
