@@ -4,6 +4,8 @@ pragma solidity ^0.8.20;
 import {Script} from "forge-std/Script.sol";
 import {TTCVault} from "../src/core/TTCVault.sol";
 import {BountyContract} from "../src/dao/CBounty.sol";
+import {console} from "forge-std/Test.sol";
+
 import "../src/types/CBounty.sol";
 import "../src/types/CVault.sol";
 
@@ -16,6 +18,7 @@ contract DeployTTCVault is Script {
     function run() external returns(TTCVault, BountyContract) {
         Constituent[] memory initialConstituents = getInitialConstituents();
         InitialETHDataFeeds[] memory initialDataFeeds = getInitialDataFeeds();
+        console.log(initialDataFeeds[0].token);
 
         vm.startBroadcast();
         BountyContract bounty = new BountyContract(initialDataFeeds, WETH_ADDRESS);
@@ -35,11 +38,14 @@ contract DeployTTCVault is Script {
         return initialConstituents;
     }
 
-    function getInitialDataFeeds() internal pure returns(InitialETHDataFeeds[] memory) {
+    function getInitialDataFeeds() internal view returns(InitialETHDataFeeds[] memory) {
         InitialETHDataFeeds[] memory initialDataFeeds = new InitialETHDataFeeds[](4);
-        initialDataFeeds[0] = InitialETHDataFeeds(WBTC_ADDRESS, 0xdeb288F737066589598e9214E782fa5A8eD689e8);
-        initialDataFeeds[1] = InitialETHDataFeeds(SHIB_ADDRESS, 0x8dD1CD88F43aF196ae478e91b9F5E4Ac69A97C61);
-        // no data feed for TONCOIN
+
+        if (block.chainid == 1) { // mainnet data feeds
+            initialDataFeeds[0] = InitialETHDataFeeds(WBTC_ADDRESS, 0xdeb288F737066589598e9214E782fa5A8eD689e8);
+            initialDataFeeds[1] = InitialETHDataFeeds(SHIB_ADDRESS, 0x8dD1CD88F43aF196ae478e91b9F5E4Ac69A97C61);
+            // no data feed for TONCOIN
+        }
 
         return initialDataFeeds;
     }

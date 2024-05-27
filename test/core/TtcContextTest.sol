@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../../src/core/TTCVault.sol";
 import "../../src/types/CVault.sol";
+import {DeployTTCVault} from "../../script/DeployTTCVault.sol";
 
 contract TtcTestContext is Test {
     TTCVault public vault;
@@ -32,12 +33,6 @@ contract TtcTestContext is Test {
     uint256 constant InitTTC = 1 * PRECISION;
 
     function setUp() public {
-        Constituent[] memory initialConstituents = new Constituent[](4);
-        initialConstituents[0] = Constituent(WETH_ADDRESS, 50);
-        initialConstituents[1] = Constituent(WBTC_ADDRESS, 30);
-        initialConstituents[2] = Constituent(SHIB_ADDRESS, 10);
-        initialConstituents[3] = Constituent(TONCOIN_ADDRESS, 10);
-
         try vm.createFork(vm.envString("ALCHEMY_MAINNET_RPC_URL")) returns (uint256 forkId) {
             mainnetFork = forkId;
         } catch {
@@ -45,15 +40,8 @@ contract TtcTestContext is Test {
         }
         vm.selectFork(mainnetFork);
 
-        InitialETHDataFeeds[] memory initialDataFeeds = new InitialETHDataFeeds[](4);
-        initialDataFeeds[0] = InitialETHDataFeeds(WBTC_ADDRESS, 0xdeb288F737066589598e9214E782fa5A8eD689e8);
-        initialDataFeeds[1] = InitialETHDataFeeds(SHIB_ADDRESS, 0x8dD1CD88F43aF196ae478e91b9F5E4Ac69A97C61);
-        // no data feed for TONCOIN
-
-        BountyContract bounty = new BountyContract(initialDataFeeds, WETH_ADDRESS);
-        address bountyAddress = address(bounty);
-
-        vault = new TTCVault(initialConstituents, bountyAddress);
+        DeployTTCVault vaultDeployer = new DeployTTCVault();
+        (vault, ) = vaultDeployer.run();
     }
 
     // initializes the vault with the initial liquidity of $1mil dollars equivalent
