@@ -3,7 +3,8 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import "../../src/dao/CBounty.sol";
-import {DeployTTCVault} from "../../script/DeployTTCVault.sol";
+import {DeployTTCVault} from "../../script/DeployTTCVault.s.sol";
+import {TTCVault} from "../../src/core/TTCVault.sol";
 
 contract BountyTest is Test {
     BountyContract public bounty;
@@ -29,8 +30,8 @@ contract BountyTest is Test {
         // set price feeds manually
         priceFeeds[WBTC_ADDRESS] = AggregatorV3Interface(0xdeb288F737066589598e9214E782fa5A8eD689e8);
         priceFeeds[SHIB_ADDRESS] = AggregatorV3Interface(0x8dD1CD88F43aF196ae478e91b9F5E4Ac69A97C61);
-        
-        return address(vaultDeployer);
+
+        return msg.sender;
     }
 
     function testCreateBounty() public {
