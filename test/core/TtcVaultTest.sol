@@ -88,7 +88,7 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
         assertEq(ERC20(TONCOIN_ADDRESS).balanceOf(address(vault)), InitTONCOIN + addedTONCOIN);
 
         // got half of TTC
-        assertEq(ERC20(vault.ttc()).balanceOf(sender), InitTTC + addedTTC);
+        assertEq(ERC20(vault.i_ttc()).balanceOf(sender), InitTTC + addedTTC);
     }
 
     function testAllJoin_Min() public {
@@ -122,7 +122,7 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
         assertEq(ERC20(TONCOIN_ADDRESS).balanceOf(address(vault)), InitTONCOIN + tokens[3].amount);
 
         // got full TTC in return
-        assertEq(ERC20(vault.ttc()).balanceOf(sender), InitTTC * 2);
+        assertEq(ERC20(vault.i_ttc()).balanceOf(sender), InitTTC * 2);
     }
 
     function testAllJoin_FailAssertion() public {
@@ -163,8 +163,8 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
         vm.stopPrank();
 
         // assert that half of TTC was burned
-        assertEq(ERC20(address(vault.ttc())).balanceOf(sender), InitTTC / 2);
-        assertEq(ERC20(vault.ttc()).totalSupply(), InitTTC / 2);
+        assertEq(ERC20(address(vault.i_ttc())).balanceOf(sender), InitTTC / 2);
+        assertEq(ERC20(vault.i_ttc()).totalSupply(), InitTTC / 2);
 
         // assert that half of the tokens were returned (with base fee)
         uint256 expectedETHBalance = chargeBaseFee(InitWETH / 2);
@@ -188,8 +188,8 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
         vm.stopPrank();
 
         // assert that all TTC was burned
-        assertEq(ERC20(vault.ttc()).balanceOf(sender), 0);
-        assertEq(ERC20(vault.ttc()).totalSupply(), 0);
+        assertEq(ERC20(vault.i_ttc()).balanceOf(sender), 0);
+        assertEq(ERC20(vault.i_ttc()).totalSupply(), 0);
 
         // assert that all the tokens were returned (with base fee)
         uint256 ethBalanceExit1 = InitWETH - expectedETHBalance;
@@ -239,7 +239,7 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
         // the new balance of the sender is 1000299671034374982
         // Source: https://www.wolframalpha.com/input?i=NumberForm%5B%28%5B%28166.6+%2B+1%29+%2F+%28166.6%29%5D+**+%281%2F2%29+-+1%29+*+10+**+18%2C+18%5D+
         uint256 expectedTTC = InitTTC + 2996710343749820;
-        assertApproxEqAbs(ERC20(vault.ttc()).balanceOf(sender), expectedTTC, DEFAULT_APPROXIMATION_ERROR);
+        assertApproxEqAbs(ERC20(vault.i_ttc()).balanceOf(sender), expectedTTC, DEFAULT_APPROXIMATION_ERROR);
 
         // assert correct amount of WETH was added
         assertEq(ERC20(WETH_ADDRESS).balanceOf(sender), 0);
@@ -259,7 +259,7 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
         // the total supply of TTC is 1002996710343749820
         // q * supply = 0.05638844340020535 * 10 ** 18 = 56388443400205350 // https://www.wolframalpha.com/input?i=NumberForm%5B%28%5B%285+%2B+1%29+%2F+%285%29%5D+**+%280.3%29+-+1%29+*+1.002996710343749820%2C+19%5D+
         expectedTTC += 56388443400205350;
-        assertApproxEqAbs(ERC20(vault.ttc()).balanceOf(sender), expectedTTC, DEFAULT_APPROXIMATION_ERROR);
+        assertApproxEqAbs(ERC20(vault.i_ttc()).balanceOf(sender), expectedTTC, DEFAULT_APPROXIMATION_ERROR);
     }
 
     function testSingleTokenJoin_AmountOut() public {
@@ -280,7 +280,7 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
 
         // assert correct TTC amount was minted
         uint256 expectedTTCSender = InitTTC + 1 * PRECISION / 2;
-        assertEq(ERC20(vault.ttc()).balanceOf(sender), expectedTTCSender);
+        assertEq(ERC20(vault.i_ttc()).balanceOf(sender), expectedTTCSender);
 
         // assert correct WETH amount was reducted
         assertEq(ERC20(WETH_ADDRESS).balanceOf(sender), 0);
@@ -306,7 +306,7 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
 
         // assert correct TTC amount was minted
         expectedTTCSender += 1 * PRECISION / 2;
-        assertEq(ERC20(vault.ttc()).balanceOf(sender), expectedTTCSender);
+        assertEq(ERC20(vault.i_ttc()).balanceOf(sender), expectedTTCSender);
 
         // assert correct WBTC amount was reducted
         // approx error should be reduced since it is only applied for spended to have sufficient balance
@@ -340,7 +340,7 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
 
         // assert correct TTC amount was burned
         uint256 expectedTTC = InitTTC - 1 * PRECISION / 10;
-        assertEq(ERC20(vault.ttc()).balanceOf(sender), expectedTTC);
+        assertEq(ERC20(vault.i_ttc()).balanceOf(sender), expectedTTC);
 
         // assert correct WETH amount was returned
         assertEq(ERC20(WETH_ADDRESS).balanceOf(sender), expectedWETH);
@@ -365,7 +365,7 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
 
         // assert correct TTC amount was burned
         expectedTTC -= 9 * PRECISION / 100;
-        assertEq(ERC20(vault.ttc()).balanceOf(sender), expectedTTC);
+        assertEq(ERC20(vault.i_ttc()).balanceOf(sender), expectedTTC);
 
         // assert correct SHIB amount was returned
         assertEq(ERC20(SHIB_ADDRESS).balanceOf(sender), expectedSHIB);

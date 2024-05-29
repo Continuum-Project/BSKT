@@ -41,7 +41,7 @@ contract TtcTestContext is Test {
         vm.selectFork(mainnetFork);
 
         DeployTTCVault vaultDeployer = new DeployTTCVault();
-        (vault, ) = vaultDeployer.run();
+        (, vault, ) = vaultDeployer.run();
     }
 
     // initializes the vault with the initial liquidity of $1mil dollars equivalent

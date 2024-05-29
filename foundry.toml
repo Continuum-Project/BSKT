@@ -14,8 +14,11 @@ remappings = [
     "@rocketpool/contracts/=lib/rocketpool/contracts/",
     "@rocketpool-router/contracts/=lib/rocketpool-router/contracts/",
     "@chainlink/contracts/=lib/chainlink/contracts/",
+    "@foundry-devops/=lib/foundry-devops/",
 ]
 gas_reports = ["*"]
+ffi = true
+fs_permissions = [{ access = "read", path = "./broadcast" }]
 
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

@@ -25,13 +25,14 @@ contract BountyTest is Test {
         vm.selectFork(mainnetFork);
 
         DeployTTCVault vaultDeployer = new DeployTTCVault();
-        (, bounty) = vaultDeployer.run();
+        address owner;
+        (owner, , bounty) = vaultDeployer.run();
 
         // set price feeds manually
         priceFeeds[WBTC_ADDRESS] = AggregatorV3Interface(0xdeb288F737066589598e9214E782fa5A8eD689e8);
         priceFeeds[SHIB_ADDRESS] = AggregatorV3Interface(0x8dD1CD88F43aF196ae478e91b9F5E4Ac69A97C61);
 
-        return msg.sender;
+        return owner;
     }
 
     function testCreateBounty() public {
