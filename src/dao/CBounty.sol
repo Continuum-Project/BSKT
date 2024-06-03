@@ -17,27 +17,27 @@ contract BountyContract is IBountyContract, Ownable {
     }
 
     modifier _hasDatafeed_(address _token) {
-        require(address(dataFeed[_token]) != address(0), "Datafeed not found");
+        require(address(dataFeeds[_token]) != address(0), "Datafeed not found");
         _;
     }
 
     modifier _nonDuplicateDatafeed_(address _token) {
-        require(address(dataFeed[_token]) == address(0), "Datafeed already exists");
+        require(address(dataFeeds[_token]) == address(0), "Datafeed already exists");
         _;
     }
 
     mapping(uint256 => Bounty) public bounties;
-    mapping(address => AggregatorV3Interface) internal dataFeed;
+    mapping(address => AggregatorV3Interface) internal dataFeeds;
 
     uint256 bountyCount;
 
     // Data Feed for WETH should NOT be provided in _dataFeeds
     constructor(InitialETHDataFeeds[] memory _dataFeeds, address wethAddress) Ownable(msg.sender) {
         for (uint256 i = 0; i < _dataFeeds.length; i++) {
-            dataFeed[_dataFeeds[i].token] = AggregatorV3Interface(_dataFeeds[i].dataFeed);
+            dataFeeds[_dataFeeds[i].token] = AggregatorV3Interface(_dataFeeds[i].dataFeed);
         }
 
-        dataFeed[wethAddress] = new WETHDataFeed(wethAddress);
+        dataFeeds[wethAddress] = new WETHDataFeed(wethAddress);
         bountyCount = 0;
     }
 
@@ -87,7 +87,7 @@ contract BountyContract is IBountyContract, Ownable {
         _nonDuplicateDatafeed_(_token) // not really needed, since only dao can invoke it
         onlyOwner
     {
-        dataFeed[_token] = AggregatorV3Interface(_dataFeed);
+        dataFeeds[_token] = AggregatorV3Interface(_dataFeed);
 
         emit PRICE_FEED_ADDED(_token, _dataFeed);
     }
@@ -122,7 +122,7 @@ contract BountyContract is IBountyContract, Ownable {
         _hasDatafeed_(_token)
         returns (uint256)
     {
-        AggregatorV3Interface tokenFeed = dataFeed[_token];
+        AggregatorV3Interface tokenFeed = dataFeeds[_token];
         (, int256 tokenPrice, , , ) = tokenFeed.latestRoundData();
         return _amount * uint256(tokenPrice);
     }
