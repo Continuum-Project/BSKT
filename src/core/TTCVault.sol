@@ -47,7 +47,8 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
 
     constructor(
         Constituent[] memory initials_constituents,
-        address bountyAddress
+        address bountyAddress,
+        address ttcAddress
     ) Ownable(msg.sender)
     {
         for (uint256 i = 0; i < initials_constituents.length; i++) {
@@ -55,7 +56,7 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
         }
 
         i_bountyContract = BountyContract(bountyAddress);
-        i_ttc = new TTC(); // sets the vault as the Owner of TTC
+        i_ttc = TTC(ttcAddress); // sets the vault as the Owner of TTC
     }
 
     function allJoin_Initial(TokenIO[] calldata tokens)

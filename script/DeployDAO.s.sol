@@ -15,7 +15,7 @@ contract DeployDAO is Script{
     // array of addresses of holders of CMT tokens
     function run() public returns(address, ContinuumDAO, address[3] memory){
         DeployTTCVault ttcVaultScript = new DeployTTCVault();
-        (address owner, TTCVault vault, BountyContract bounty) = ttcVaultScript.run();
+        (address owner, TTCVault vault, BountyContract bounty, TTC ttc) = ttcVaultScript.run();
 
         address holder1 = makeAddr("CMT_HOLDER_1");
         address holder2 = makeAddr("CMT_HOLDER_2");
@@ -34,6 +34,7 @@ contract DeployDAO is Script{
         vault.transferOwnership(address(dao)); // transfer ownership of the vault to the DAO
         bounty.transferOwnership(address(dao)); // transfer ownership of the bounty to the DAO
         cmt.transferOwnership(address(dao)); // transfer ownership of the CMT to the DAO
+        ttc.transferOwnership(address(vault)); // transfer ownership of the TTC to the vault
 
         timelock.grantRole(timelock.PROPOSER_ROLE(), address(dao));
         timelock.grantRole(timelock.EXECUTOR_ROLE(), address(dao));

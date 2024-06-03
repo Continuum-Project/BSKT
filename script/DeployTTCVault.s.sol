@@ -5,6 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {TTCVault} from "../src/core/TTCVault.sol";
 import {BountyContract} from "../src/dao/CBounty.sol";
 import {console} from "forge-std/Test.sol";
+import {TTC} from "../src/core/TTC.sol";
 
 import "../src/types/CBounty.sol";
 import "../src/types/CVault.sol";
@@ -15,16 +16,17 @@ contract DeployTTCVault is Script {
     address constant SHIB_ADDRESS = 0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE;
     address constant TONCOIN_ADDRESS = 0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1;
 
-    function run() external returns(address, TTCVault, BountyContract) {
+    function run() external returns(address, TTCVault, BountyContract, TTC) {
         Constituent[] memory initialConstituents = getInitialConstituents();
         InitialETHDataFeeds[] memory initialDataFeeds = getInitialDataFeeds();
 
         vm.startBroadcast(msg.sender);
         BountyContract bounty = new BountyContract(initialDataFeeds, WETH_ADDRESS);
-        TTCVault ttcVault = new TTCVault(initialConstituents, address(bounty));
+        TTC ttc = new TTC();
+        TTCVault ttcVault = new TTCVault(initialConstituents, address(bounty), address(ttc));
         vm.stopBroadcast();
 
-        return (msg.sender, ttcVault, bounty);
+        return (msg.sender, ttcVault, bounty, ttc);
     }
 
     function getInitialConstituents() internal pure returns (Constituent[] memory){

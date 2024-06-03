@@ -25,19 +25,28 @@ contract IntegrationDAO is Test {
     string constant TTC_CONTRACT_NAME = "TTC";
 
     function setUp() public{
+        // uint256 mainnetFork;
+        // try vm.createFork(vm.envString("ALCHEMY_MAINNET_RPC_URL")) returns (uint256 forkId) {
+        //     mainnetFork = forkId;
+        // } catch {
+        //     mainnetFork = vm.createFork(vm.envString("INFURA_MAINNET_RPC_URL"));
+        // }
+        // vm.selectFork(mainnetFork);
+
         daoDeployer = new DeployDAO();
         address[3] memory cmtHolders;
         address owner;
         (owner, dao, cmtHolders) = daoDeployer.run();
 
         // fetch latest deployments 
-        ttcVault = TTCVault(DevOpsTools.get_most_recent_deployment(TTC_VAULT_CONTRACT_NAME, block.chainid));
-        bounty = BountyContract(DevOpsTools.get_most_recent_deployment(BOUNTY_CONTRACT_NAME, block.chainid));
-        cmt = CMT(DevOpsTools.get_most_recent_deployment(CMT_CONTRACT_NAME, block.chainid));
-        ttc = ttcVault.i_ttc();
+        // ttcVault = TTCVault(DevOpsTools.get_most_recent_deployment(TTC_VAULT_CONTRACT_NAME, block.chainid));
+        // bounty = BountyContract(DevOpsTools.get_most_recent_deployment(BOUNTY_CONTRACT_NAME, block.chainid));
+        // cmt = CMT(DevOpsTools.get_most_recent_deployment(CMT_CONTRACT_NAME, block.chainid));
+        // ttc = TTC(DevOpsTools.get_most_recent_deployment(TTC_CONTRACT_NAME, block.chainid));
     }
 
-    function testDeployDAO() public view {
+    function testDeployDAO() public {
+        setUp();
         assertTrue(address(dao) != address(0), "DAO not deployed");
     }
 

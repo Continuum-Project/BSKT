@@ -26,7 +26,7 @@ contract BountyTest is Test {
 
         DeployTTCVault vaultDeployer = new DeployTTCVault();
         address owner;
-        (owner, , bounty) = vaultDeployer.run();
+        (owner, , bounty, ) = vaultDeployer.run();
 
         // set price feeds manually
         priceFeeds[WBTC_ADDRESS] = AggregatorV3Interface(0xdeb288F737066589598e9214E782fa5A8eD689e8);
