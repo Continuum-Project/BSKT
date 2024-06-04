@@ -43,13 +43,8 @@ contract DeployDAO is Script{
 
         vm.startBroadcast(owner);
         CMT _cmt = new CMT();
-        mintCMT(_cmt, holder1, 1000); // create 3000 CMT tokens
-        mintCMT(_cmt, holder2, 1000);
-        mintCMT(_cmt, holder3, 1000);
-
         TimelockController timelock = new TimelockController(7200, new address[](0), new address[](0), owner);
         ContinuumDAO _dao = new ContinuumDAO(_cmt, vault, timelock);
-        mintCMT(_cmt, address(_dao), 10000); // create 10000 CMT tokens for the DAO
 
         vault.transferOwnership(address(_dao)); // transfer ownership of the vault to the DAO
         _cmt.transferOwnership(address(_dao)); // transfer ownership of the CMT to the DAO
@@ -59,6 +54,13 @@ contract DeployDAO is Script{
         timelock.grantRole(timelock.DEFAULT_ADMIN_ROLE(), address(_dao));
         timelock.renounceRole(timelock.DEFAULT_ADMIN_ROLE(), owner); // renounce admin role
 
+        vm.stopBroadcast();
+
+        vm.startBroadcast(address(_dao));
+        mintCMT(_cmt, holder1, 1000); 
+        mintCMT(_cmt, holder2, 1000);
+        mintCMT(_cmt, holder3, 1000);
+        mintCMT(_cmt, address(_dao), 10000); // create 10000 CMT tokens for the DAO
         vm.stopBroadcast();
 
         defaultCmtHolders = [holder1, holder2, holder3];

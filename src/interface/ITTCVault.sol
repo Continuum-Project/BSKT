@@ -48,4 +48,10 @@ interface ITTCVault {
 
     function modifyConstituents(Constituent[] calldata newConstituents) 
         external;
+
+    function createBounty(uint256 amountGive, address tokenGive, address tokenWant)
+        external returns(uint256 bountyId);
+
+    function fulfillBounty(uint256 _bountyId, uint256 amountIn) 
+        external;
 }

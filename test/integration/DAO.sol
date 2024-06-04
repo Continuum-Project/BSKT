@@ -66,7 +66,7 @@ contract IntegrationDAO is Test {
         assertTrue(ttcVaultOwner == address(dao), "TTCVault not owned by DAO");
 
         address bountyOwner = bounty.owner();
-        assertTrue(bountyOwner == address(dao), "BountyContract not owned by DAO");
+        assertTrue(bountyOwner == address(ttcVault), "BountyContract not owned by DAO");
 
         address cmtOwner = cmt.owner();
         assertTrue(cmtOwner == address(dao), "CMT not owned by DAO");
