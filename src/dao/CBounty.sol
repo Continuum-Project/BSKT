@@ -65,7 +65,7 @@ contract BountyContract is IBountyContract, Ownable {
 
     function fulfillBounty(uint256 _bountyId, uint256 amountIn) 
         external 
-        onlyOwner // only DAO can fulfill bounties, anyone can fulfill it through DAO
+        onlyOwner // only DAO can fulfill bounties, though anyone can fulfill it through DAO
         _activeBounty_(_bountyId)
     {
         _fulfillBounty(bounties[_bountyId], amountIn);
