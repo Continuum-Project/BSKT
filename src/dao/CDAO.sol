@@ -33,7 +33,7 @@ contract ContinuumDAO is
         CMT _cmt,
         TTCVault _ttcVault,
         TimelockController _timelock
-    ) Governor(NAME) GovernorVotes(cmt) GovernorVotesQuorumFraction(QUORUM_PERCENTAGE) GovernorTimelockControl(_timelock) {
+    ) Governor(NAME) GovernorVotes(_cmt) GovernorVotesQuorumFraction(QUORUM_PERCENTAGE) GovernorTimelockControl(_timelock) {
         cmt = _cmt;
         ttcVault = _ttcVault;
     }
