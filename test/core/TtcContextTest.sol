@@ -41,7 +41,9 @@ contract TtcTestContext is Test {
         vm.selectFork(mainnetFork);
 
         DeployTTCVault vaultDeployer = new DeployTTCVault();
-        (, vault, , ) = vaultDeployer.run();
+        (, vault, , ) = vaultDeployer.run(msg.sender);
+        console.log("Vault owner: ", vault.owner());
+        console.log("Sender: ", msg.sender);
     }
 
     // initializes the vault with the initial liquidity of $1mil dollars equivalent
@@ -84,7 +86,6 @@ contract TtcTestContext is Test {
     }
 
     function liquidSetUp() public returns (address) {
-        setUp();
         address sender = makeAddr("sender");
         vm.startPrank(sender);
         initLiquidity(sender);

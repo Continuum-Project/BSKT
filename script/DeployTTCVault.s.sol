@@ -16,17 +16,18 @@ contract DeployTTCVault is Script {
     address constant SHIB_ADDRESS = 0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE;
     address constant TONCOIN_ADDRESS = 0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1;
 
-    function run() external returns(address, TTCVault, BountyContract, TTC) {
+    function run(address owner) external returns(address, TTCVault, BountyContract, TTC) {
         Constituent[] memory initialConstituents = getInitialConstituents();
         InitialETHDataFeeds[] memory initialDataFeeds = getInitialDataFeeds();
 
-        vm.startBroadcast(msg.sender);
+        vm.startBroadcast(owner);
         BountyContract bounty = new BountyContract(initialDataFeeds, WETH_ADDRESS);
         TTC ttc = new TTC();
         TTCVault ttcVault = new TTCVault(initialConstituents, address(bounty), address(ttc));
+        ttc.transferOwnership(address(ttcVault));
         vm.stopBroadcast();
 
-        return (msg.sender, ttcVault, bounty, ttc);
+        return (owner, ttcVault, bounty, ttc);
     }
 
     function getInitialConstituents() internal pure returns (Constituent[] memory){
