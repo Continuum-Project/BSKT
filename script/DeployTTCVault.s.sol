@@ -25,6 +25,7 @@ contract DeployTTCVault is Script {
         TTC ttc = new TTC();
         TTCVault ttcVault = new TTCVault(initialConstituents, address(bounty), address(ttc));
         ttc.transferOwnership(address(ttcVault));
+        bounty.transferOwnership(address(ttcVault));
         vm.stopBroadcast();
 
         return (owner, ttcVault, bounty, ttc);

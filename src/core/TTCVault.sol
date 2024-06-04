@@ -327,4 +327,40 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
 
         return true;
     }
+
+    // ------------------ ADMIN FUNCTIONS ------------------
+
+    function createBounty(uint256 amountGive, address tokenGive, address tokenWant) 
+        external 
+        onlyOwner
+        returns (uint256)
+    {
+        return i_bountyContract.createBounty(tokenWant, tokenGive, amountGive);
+    }
+
+    function fulfillBounty(uint256 _bountyId, uint256 amountIn) 
+        external 
+        onlyOwner
+    {
+        // approve the bounty contract to transfer the tokens
+        Bounty memory bounty = i_bountyContract.getBounty(_bountyId);
+        IERC20(bounty.tokenGive).approve(address(i_bountyContract), bounty.amountGive);
+
+        i_bountyContract.fulfillBounty(_bountyId, amountIn);
+    }
+
+    /*
+     * @notice Modify the constituents of the vault
+     * @param newConstituents The new constituents of the vault
+     */
+    function modifyConstituents(Constituent[] calldata newConstituents) 
+        external 
+        onlyOwner
+    {
+        for (uint256 i = 0; i < newConstituents.length; i++) {
+            if (s_constituents[i].token != newConstituents[i].token) {
+                s_constituents[i] = newConstituents[i];
+            }
+        }
+    }
 }

@@ -48,11 +48,10 @@ contract DeployDAO is Script{
         mintCMT(_cmt, holder3, 1000);
 
         TimelockController timelock = new TimelockController(7200, new address[](0), new address[](0), owner);
-        ContinuumDAO _dao = new ContinuumDAO(_cmt, timelock);
+        ContinuumDAO _dao = new ContinuumDAO(_cmt, vault, timelock);
         mintCMT(_cmt, address(_dao), 10000); // create 10000 CMT tokens for the DAO
 
         vault.transferOwnership(address(_dao)); // transfer ownership of the vault to the DAO
-        bounty.transferOwnership(address(_dao)); // transfer ownership of the bounty to the DAO
         _cmt.transferOwnership(address(_dao)); // transfer ownership of the CMT to the DAO
 
         timelock.grantRole(timelock.PROPOSER_ROLE(), address(_dao));

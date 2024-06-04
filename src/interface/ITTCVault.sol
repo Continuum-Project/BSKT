@@ -45,4 +45,7 @@ interface ITTCVault {
     
     function singleExit(Constituent calldata constituentOut, uint256 _in) 
         external;
+
+    function modifyConstituents(Constituent[] calldata newConstituents) 
+        external;
 }
