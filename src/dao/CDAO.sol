@@ -19,7 +19,7 @@ contract ContinuumDAO is
     GovernorTimelockControl
 {
     string constant NAME = "Continuum DAO";
-    uint8 constant QUORUM_PERCENTAGE = 4;
+    uint8 constant QUORUM_PERCENTAGE = 25;
     
     constructor(
         IVotes _token,
