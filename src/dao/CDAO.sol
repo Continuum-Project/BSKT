@@ -33,7 +33,7 @@ contract ContinuumDAO is
     TTCVault public immutable ttcVault;
 
     uint256 public proposalFee = 100; // 100 CMT
-    uint8 public quorumPercent = 25;
+    uint8 public constant QUORUM_PERCENT = 25;
 
     mapping(uint256 => address) public proposalToCreator;
     
@@ -41,7 +41,7 @@ contract ContinuumDAO is
         CMT _cmt,
         TTCVault _ttcVault,
         TimelockController _timelock
-    ) Governor(NAME) GovernorVotes(_cmt) GovernorVotesQuorumFraction(quorumPercent) GovernorTimelockControl(_timelock) GovernorSettings(VOTING_DELAY, VOTING_PERIOD, PROPOSAL_THRESHOLD){
+    ) Governor(NAME) GovernorVotes(_cmt) GovernorVotesQuorumFraction(QUORUM_PERCENT) GovernorTimelockControl(_timelock) GovernorSettings(VOTING_DELAY, VOTING_PERIOD, PROPOSAL_THRESHOLD){
         cmt = _cmt;
         ttcVault = _ttcVault;
     }
