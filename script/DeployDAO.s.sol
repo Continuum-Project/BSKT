@@ -23,7 +23,9 @@ contract DeployDAO is Script{
     TTCVault public vault;
     BountyContract public bounty;
     TTC public ttc;
-    address[3] defaultCmtHolders;
+    address[3] public defaultCmtHolders;
+
+    uint256 public constant TIMELOCK_DELAY = 7200;
 
     function setupVault(address _owner) public returns(address) {
         address vaultOwner;
@@ -41,9 +43,12 @@ contract DeployDAO is Script{
         address holder2 = makeAddr("CMT_HOLDER_2");
         address holder3 = makeAddr("CMT_HOLDER_3");
 
+        address[] memory proposers = new address[](0); // anyone can propose
+        address[] memory executors = new address[](0); // empty executors
+
         vm.startBroadcast(owner);
         CMT _cmt = new CMT();
-        TimelockController timelock = new TimelockController(7200, new address[](0), new address[](0), owner);
+        TimelockController timelock = new TimelockController(TIMELOCK_DELAY, proposers, executors, owner);
         ContinuumDAO _dao = new ContinuumDAO(_cmt, vault, timelock);
 
         vault.transferOwnership(address(_dao)); // transfer ownership of the vault to the DAO
@@ -52,23 +57,39 @@ contract DeployDAO is Script{
         timelock.grantRole(timelock.PROPOSER_ROLE(), address(_dao));
         timelock.grantRole(timelock.EXECUTOR_ROLE(), address(_dao));
         timelock.grantRole(timelock.DEFAULT_ADMIN_ROLE(), address(_dao));
+        timelock.grantRole(timelock.EXECUTOR_ROLE(), address(timelock)); 
+
         timelock.renounceRole(timelock.DEFAULT_ADMIN_ROLE(), owner); // renounce admin role
 
-        vm.stopBroadcast();
-
-        vm.startBroadcast(address(_dao));
-        mintCMT(_cmt, holder1, 1000); 
-        mintCMT(_cmt, holder2, 1000);
-        mintCMT(_cmt, holder3, 1000);
-        mintCMT(_cmt, address(_dao), 10000); // create 10000 CMT tokens for the DAO
         vm.stopBroadcast();
 
         defaultCmtHolders = [holder1, holder2, holder3];
         dao = _dao;
         cmt = _cmt;
+
+        defaultMints();
+        selfDelegate(holder1);
+        selfDelegate(holder2);
+        selfDelegate(holder3);
+        selfDelegate(address(_dao));
     }
 
     function mintCMT(CMT _cmt, address holder, uint256 amount) public {
-        _cmt.mint(holder, amount);
+        _cmt.mint(holder, amount * 10 ** ERC20(_cmt).decimals()); // address(0) is mint
+    }
+
+    function selfDelegate(address holder) public {
+        vm.startBroadcast(holder);
+        cmt.delegate(holder);
+        vm.stopBroadcast();
+    }
+
+    function defaultMints() internal {
+        vm.startBroadcast(address(dao));
+        mintCMT(cmt, defaultCmtHolders[0], 1000); 
+        mintCMT(cmt, defaultCmtHolders[1], 1000);
+        mintCMT(cmt, defaultCmtHolders[2], 1000);
+        mintCMT(cmt, address(dao), 10000); // create 10000 CMT tokens for the DAO
+        vm.stopBroadcast();
     }
 }

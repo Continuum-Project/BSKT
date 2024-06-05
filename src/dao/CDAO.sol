@@ -5,6 +5,7 @@ import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.s
 import {GovernorCountingSimple} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import {GovernorVotesQuorumFraction} from "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
+import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import {GovernorTimelockControl} from "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
@@ -18,14 +19,21 @@ contract ContinuumDAO is
     GovernorCountingSimple,
     GovernorVotes,
     GovernorVotesQuorumFraction,
-    GovernorTimelockControl
+    GovernorTimelockControl,
+    GovernorSettings
 {
+    string constant NAME = "Continuum DAO";
+
+    uint48 constant VOTING_DELAY = 1 days;
+    uint32 constant VOTING_PERIOD = 4 weeks;
+    uint256 constant PROPOSAL_THRESHOLD = 0;
+
+
     CMT public immutable cmt;
     TTCVault public immutable ttcVault;
 
-    uint256 proposalFee = 100; // 100 CMT
-    string constant NAME = "Continuum DAO";
-    uint8 constant QUORUM_PERCENTAGE = 25;
+    uint256 public proposalFee = 100; // 100 CMT
+    uint8 public quorumPercent = 25;
 
     mapping(uint256 => address) public proposalToCreator;
     
@@ -33,7 +41,7 @@ contract ContinuumDAO is
         CMT _cmt,
         TTCVault _ttcVault,
         TimelockController _timelock
-    ) Governor(NAME) GovernorVotes(_cmt) GovernorVotesQuorumFraction(QUORUM_PERCENTAGE) GovernorTimelockControl(_timelock) {
+    ) Governor(NAME) GovernorVotes(_cmt) GovernorVotesQuorumFraction(quorumPercent) GovernorTimelockControl(_timelock) GovernorSettings(VOTING_DELAY, VOTING_PERIOD, PROPOSAL_THRESHOLD){
         cmt = _cmt;
         ttcVault = _ttcVault;
     }
@@ -45,16 +53,16 @@ contract ContinuumDAO is
 
     // ----------- OVERRIDES -----------
 
-    function votingDelay() public pure override returns (uint256) {
-        return 7200; // 1 day
+    function votingDelay() public view override(Governor, GovernorSettings) returns (uint256) {
+        return super.votingDelay();
     }
 
-    function votingPeriod() public pure override returns (uint256) {
-        return 50400 * 4; // 4 weeks
+    function votingPeriod() public view override(Governor, GovernorSettings) returns (uint256) {
+        return super.votingPeriod();
     }
 
-    function proposalThreshold() public pure override returns (uint256) {
-        return 0;
+    function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
+        return super.proposalThreshold();
     }
 
     function propose(

