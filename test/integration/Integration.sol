@@ -350,6 +350,81 @@ contract Integration is Test {
         assertTrue(ERC20(SHIB_ADDRESS).balanceOf(address(ttcVault)) == 0, "SHIB not removed");
     }
 
+    function testSanity() public {
+        address user = makeAddr("user");
+        initLiquidity(user); // make sure that normal users can mint
+
+        // check that users can't acces sensitive methods of:
+        // TTC
+        // TTCVault
+        // BountyContract
+        // CMT
+        // ContinuumDAO
+
+        vm.startPrank(user);
+
+        // TTC
+        vm.expectRevert();
+        ttc.mint(user, 100);
+
+        vm.expectRevert();
+        ttc.burn(user, 100);
+
+        vm.expectRevert();
+        ttc.transferOwnership(user);
+
+        // TTCVault
+        vm.expectRevert();
+        ttcVault.createBounty(0, address(0), address(0));
+
+        vm.expectRevert();
+        ttcVault.fulfillBounty(0, 0);
+
+        vm.expectRevert();
+        ttcVault.transferOwnership(address(0));
+
+        Constituent[] memory newConstituents = getInitialConstituents();
+
+        vm.expectRevert();
+        ttcVault.modifyConstituents(newConstituents);
+
+        vm.expectRevert();
+        ttcVault.collectYield(WETH_ADDRESS);
+
+        // Bounty
+        vm.expectRevert();
+        bounty.createBounty(address(0), address(0), 0);
+
+        vm.expectRevert();
+        bounty.fulfillBounty(0, 0);
+
+        vm.expectRevert();
+        bounty.transferOwnership(address(0));
+
+        // CMT
+        vm.expectRevert();
+        cmt.mint(address(0), 0);
+
+        vm.expectRevert();
+        cmt.burn(address(0), 0);
+
+        vm.expectRevert();
+        cmt.transferOwnership(address(0));
+
+        // ContinuumDAO
+        vm.expectRevert();
+        dao.addPriceFeed(address(0), address(0));
+
+        vm.expectRevert();
+        dao.createBounty(address(0), 0, address(0), 0, 0);
+
+        vm.expectRevert();
+        dao.fulfillBounty(0, 0); // asserts that user without funds cannot do that
+
+        vm.expectRevert();
+        dao.setProposalThreshold(0);
+    }
+
     // ------------ HELPERS ------------
 
     function getInitialConstituents() internal pure returns (Constituent[] memory){
