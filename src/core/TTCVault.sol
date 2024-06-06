@@ -363,4 +363,13 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
             }
         }
     }
+
+    // ------------ QUERIES ------------
+    function constituentsLength() 
+        external 
+        view 
+        returns (uint256) 
+    {
+        return s_constituents.length;
+    }
 }

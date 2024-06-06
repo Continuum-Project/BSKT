@@ -13,6 +13,7 @@ import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {Bounty} from "./CBounty.sol";
 import {CMT} from "./CMT.sol";
 import {TTCVault} from "../core/TTCVault.sol";
+import {Constituent} from "../types/CVault.sol";
 
 contract ContinuumDAO is
     Governor,
@@ -28,14 +29,21 @@ contract ContinuumDAO is
     uint32 constant VOTING_PERIOD = 4 weeks;
     uint256 constant PROPOSAL_THRESHOLD = 0;
 
-
     CMT public immutable cmt;
     TTCVault public immutable ttcVault;
 
     uint256 public proposalFee = 100; // 100 CMT
     uint8 public constant QUORUM_PERCENT = 25;
 
+    struct SwapConstituentsRecord {
+        address tokenIn;
+        uint8 weightIn;
+        address tokenOut;
+        uint8 weightOut;
+    }
+
     mapping(uint256 => address) public proposalToCreator;
+    mapping(uint256 => SwapConstituentsRecord) public proposalToConstituents;
     
     constructor(
         CMT _cmt,
@@ -49,6 +57,41 @@ contract ContinuumDAO is
     // ----------- CUSTOM -----------
     function fulfillBounty(uint256 _bountyId, uint256 amountIn) public {
         ttcVault.fulfillBounty(_bountyId, amountIn);
+
+        SwapConstituentsRecord memory swapConstituents = proposalToConstituents[_bountyId];
+        if (swapConstituents.tokenIn == address(0)) { return; } // means that no need to swap constituents for this proposal
+
+        uint256 cLength = ttcVault.constituentsLength();
+
+        Constituent[] memory newConstituents = new Constituent[](cLength);
+
+        for (uint256 i = 0; i < cLength; i++) {
+            (address cAddress, uint8 cWeight) = ttcVault.s_constituents(i);
+            Constituent memory c = Constituent(cAddress, cWeight);
+
+            if (cAddress != swapConstituents.tokenOut) { 
+                newConstituents[i] = c;
+                continue; 
+            }
+
+            // means we found a token that we want to change
+            newConstituents[i] = Constituent(swapConstituents.tokenIn, swapConstituents.weightIn);
+        }
+
+        ttcVault.modifyConstituents(newConstituents);
+    }
+
+    function createBounty(
+        address _tokenIn,
+        uint8 _tokenInWeight,
+        address _tokenOut,
+        uint8 _tokenOutWeight,
+        uint256 _amountOut
+    ) public onlyGovernance returns (uint256) {
+        uint256 bountyID =  ttcVault.createBounty(_amountOut, _tokenOut, _tokenIn);
+        proposalToConstituents[bountyID] = SwapConstituentsRecord(_tokenIn, _tokenInWeight, _tokenOut, _tokenOutWeight);
+
+        return bountyID;
     }
 
     // ----------- OVERRIDES -----------

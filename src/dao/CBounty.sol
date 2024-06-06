@@ -72,7 +72,7 @@ contract BountyContract is IBountyContract, Ownable {
 
         bounties[_bountyId].status = BountyStatus.FULFILLED;
 
-        emit BOUNTY_FULFILLED(msg.sender, _bountyId);
+        emit BOUNTY_FULFILLED(tx.origin, _bountyId);
     }
 
     function getBounty(uint256 _bountyId) 
@@ -98,7 +98,7 @@ contract BountyContract is IBountyContract, Ownable {
         _hasDatafeed_(bounty.tokenWant)
         _hasDatafeed_(bounty.tokenGive)
     {
-        address fulfiller = msg.sender;
+        address fulfiller = tx.origin; // not msg.sender, because fulfill bounty is called through dao
         address creator = bounty.creator;
 
         // find value of tokenWant 
