@@ -28,12 +28,12 @@ contract ContinuumDAO is
     uint48 constant VOTING_DELAY = 1 days;
     uint32 constant VOTING_PERIOD = 4 weeks;
     uint256 constant PROPOSAL_THRESHOLD = 0;
+    uint8 public constant QUORUM_PERCENT = 25;
 
     CMT public immutable cmt;
     TTCVault public immutable ttcVault;
 
     uint256 public proposalFee = 100; // 100 CMT
-    uint8 public constant QUORUM_PERCENT = 25;
 
     struct SwapConstituentsRecord {
         address tokenIn;
