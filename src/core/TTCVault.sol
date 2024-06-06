@@ -11,6 +11,8 @@ import "./TTCMath.sol";
 import "../interface/ITTCVault.sol";
 import "./TTCFees.sol";
 import "../dao/CBounty.sol";
+import "../periphery/cstETH.sol";
+import "../interface/IFeeCollectable.sol";
 
 contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
     modifier _lock_() {
@@ -364,7 +366,21 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
         }
     }
 
+    /*
+     * @dev does not check if the token is a fee collectable token, should be done by dao
+     * @notice Collect the yield from a fee collectable token
+     * @param _token The token to collect the yield from
+     */
+    function collectYield(address _token) 
+        external 
+        onlyOwner
+    {
+        IFeeCollectable feeCollectable = IFeeCollectable(_token);
+        feeCollectable.collectFee();
+    }
+
     // ------------ QUERIES ------------
+
     function constituentsLength() 
         external 
         view 
