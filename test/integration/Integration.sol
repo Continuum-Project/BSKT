@@ -35,6 +35,7 @@ contract Integration is Test {
     address constant WBTC_ADDRESS = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
     address constant SHIB_ADDRESS = 0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE;
     address constant TONCOIN_ADDRESS = 0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1;
+    address constant LINK_ADDRESS = 0x514910771AF9Ca656af840dff83E8264EcF986CA;
 
     uint256 constant InitWETH = 166.6 * 10 ** 18;
     uint256 constant InitWBTC = 5 * 10 ** 18;
@@ -189,8 +190,10 @@ contract Integration is Test {
 
         vm.startPrank(defaultCmtHolders[0]);
 
+        uint256 proposerBalanceBeforeProposal = ERC20(cmt).balanceOf(defaultCmtHolders[0]);
         ERC20(cmt).approve(address(dao), dao.proposalFee());
         dao.propose(targets, values, calldatas, "Change Quorum Percentage to 50%");
+        assertTrue(ERC20(cmt).balanceOf(defaultCmtHolders[0]) == proposerBalanceBeforeProposal - dao.proposalFee(), "Proposal fee not deducted");
 
         vm.stopPrank();
 
@@ -238,10 +241,12 @@ contract Integration is Test {
         // execute proposal after timelock delay has passed
         dao.execute(targets, values, calldatas, keccak256("Change Quorum Percentage to 50%"));
         
+        // assert that proposal fee is returned
+        assertTrue(ERC20(cmt).balanceOf(defaultCmtHolders[0]) == proposerBalanceBeforeProposal, "Proposal fee not returned");
         assertTrue(dao.proposalThreshold() == 50, "Quorum not changed");
     }
 
-    function testDAO_modifyConstituentsViaProposal() public {
+    function testDAO_modifyConstituentsViaProposal_NoReconstitution() public {
         vm.roll(block.number + 1); // move one block
 
         initLiquidity(makeAddr("sender"));
@@ -263,30 +268,7 @@ contract Integration is Test {
             onePercentBtc // swapping 1% of BTC for SHIB
         );
 
-        vm.startPrank(defaultCmtHolders[0]);
-
-        ERC20(cmt).approve(address(dao), dao.proposalFee());
-        dao.propose(targets, values, calldatas, "Swap 1% of WBTC for SHIB");
-
-        vm.stopPrank();
-
-        vm.roll(block.number + dao.votingDelay() + 1); // start voting period
-
-        uint256 proposalID = dao.hashProposal(targets, values, calldatas, keccak256("Swap 1% of WBTC for SHIB"));
-
-        vm.startPrank(address(dao)); // big voter votes
-        uint8 forVote = uint8(GovernorCountingSimple.VoteType.For);
-        dao.castVote(proposalID, forVote);
-        vm.stopPrank();
-
-        vm.roll(block.number + dao.votingPeriod() + 1); // finish voting period
-
-        dao.queue(targets, values, calldatas, keccak256("Swap 1% of WBTC for SHIB"));
-
-        vm.warp(block.timestamp + timelockDelay + 1); // finish timelock delay
-
-        // create bounty
-        dao.execute(targets, values, calldatas, keccak256("Swap 1% of WBTC for SHIB"));
+        proposeAndExecute(targets, values, calldatas);
 
         // check that bounty was created 
         Bounty memory b = bounty.getBounty(0);
@@ -294,9 +276,6 @@ contract Integration is Test {
 
         // Second, fulfill this bounty
         address fulfiller = makeAddr("fulfiller");
-        targets[0] = address(dao);
-        values[0] = 0;
-        calldatas[0] = abi.encodeWithSignature("fulfillBounty(uint256,uint256)", 0, onePercentBtc);
 
         vm.startPrank(fulfiller, fulfiller);
         // TODO: make this dynamic
@@ -313,6 +292,62 @@ contract Integration is Test {
 
         assertTrue(ttcVault.getTokenWeight(WBTC_ADDRESS) == 29, "WBTC weight not changed");
         assertTrue(ttcVault.getTokenWeight(SHIB_ADDRESS) == 11, "SHIB weight not changed");
+    }
+
+    // Tests two things: reconstitution proposal and datafeed proposal
+    function testDAO_modifyConstituentsViaProposal_Reconstitution() public {
+        vm.roll(block.number + 1); // move one block
+
+        initLiquidity(makeAddr("sender"));
+
+        address[] memory targets = new address[](1);
+        uint256[] memory values = new uint256[](1);
+        bytes[] memory calldatas = new bytes[](1);
+
+        // First, create a datafeed proposal addition to add LINK datafeed
+        address lINKDataFeed = address(0xDC530D9457755926550b59e8ECcdaE7624181557);
+
+        targets[0] = address(dao);
+        values[0] = 0;
+        calldatas[0] = abi.encodeWithSignature("addPriceFeed(address,address)", LINK_ADDRESS, lINKDataFeed);
+
+        proposeAndExecute(targets, values, calldatas);
+
+        // First, create a bounty
+        targets[0] = address(dao);
+        values[0] = 0;
+        calldatas[0] = abi.encodeWithSignature(
+            "createBounty(address,uint8,address,uint8,uint256)", 
+            LINK_ADDRESS,
+            ttcVault.getTokenWeight(SHIB_ADDRESS), // same weight as SHIB
+            SHIB_ADDRESS, 
+            0, // SHIB will be 0
+            InitSHIB // swapping all SHIB for LINK
+        );
+
+        proposeAndExecute(targets, values, calldatas);
+
+        // fulfill bounty
+        address fulfiller = makeAddr("fulfiller");
+
+        vm.startPrank(fulfiller, fulfiller);
+
+        uint256 hardcodedLINKForSHIB = 6190 * 10 ** ERC20(LINK_ADDRESS).decimals(); // 6190 LINK for InitSHIB TODO: make this dynamic
+
+        dealAndApprove(LINK_ADDRESS, fulfiller, hardcodedLINKForSHIB);
+        ERC20(LINK_ADDRESS).approve(address(bounty), hardcodedLINKForSHIB);
+
+        dao.fulfillBounty(0, hardcodedLINKForSHIB);
+
+        vm.stopPrank();
+
+        Bounty memory b = bounty.getBounty(0);
+
+        assertTrue(b.status == BountyStatus.FULFILLED, "Bounty not fulfilled");
+        assertTrue(ttcVault.getTokenWeight(SHIB_ADDRESS) == 0, "SHIB weight not changed");
+        assertTrue(ttcVault.getTokenWeight(LINK_ADDRESS) == 10, "LINK not added");
+        assertTrue(ERC20(LINK_ADDRESS).balanceOf(address(ttcVault)) == hardcodedLINKForSHIB, "LINK not added");
+        assertTrue(ERC20(SHIB_ADDRESS).balanceOf(address(ttcVault)) == 0, "SHIB not removed");
     }
 
     // ------------ HELPERS ------------
@@ -353,6 +388,36 @@ contract Integration is Test {
         dealAndApprove(TONCOIN_ADDRESS, sender, InitTONCOIN);
 
         ttcVault.allJoin_Initial(tokens);
+        vm.stopPrank();
+    }
+
+    function proposeAndExecute(address[] memory targets, uint256[] memory values, bytes[] memory calldatas) public {
+        vm.startPrank(defaultCmtHolders[0]);
+
+        ERC20(cmt).approve(address(dao), dao.proposalFee());
+        dao.propose(targets, values, calldatas, "DEFAULT");
+
+        vm.stopPrank();
+
+        vm.roll(block.number + dao.votingDelay() + 1); // start voting period
+
+        uint256 proposalID = dao.hashProposal(targets, values, calldatas, keccak256("DEFAULT"));
+
+        vm.startPrank(address(dao)); // big voter votes
+
+        uint8 forVote = uint8(GovernorCountingSimple.VoteType.For);
+        dao.castVote(proposalID, forVote);
+
+        vm.stopPrank();
+
+        vm.roll(block.number + dao.votingPeriod() + 1); // finish voting period
+
+        dao.queue(targets, values, calldatas, keccak256("DEFAULT"));
+
+        vm.warp(block.timestamp + timelockDelay + 1); // finish timelock delay
+
+        dao.execute(targets, values, calldatas, keccak256("DEFAULT"));
+
         vm.stopPrank();
     }
 }

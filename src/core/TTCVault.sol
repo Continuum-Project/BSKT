@@ -377,6 +377,13 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
         feeCollectable.collectFee();
     }
 
+    function addPriceFeed(address _token, address _dataFeed) 
+        external 
+        onlyOwner
+    {
+        i_bountyContract.addPriceFeed(_token, _dataFeed);
+    }
+
     // ------------ QUERIES ------------
 
     function constituentsLength() 

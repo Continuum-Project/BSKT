@@ -111,6 +111,10 @@ contract ContinuumDAO is
         return bountyID;
     }
 
+    function addPriceFeed(address _token, address _dataFeed) public onlyGovernance {
+        ttcVault.addPriceFeed(_token, _dataFeed);
+    }
+
     // ----------- OVERRIDES -----------
 
     function votingDelay() public view override(Governor, GovernorSettings) returns (uint256) {
