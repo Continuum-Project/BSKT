@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {console} from "forge-std/Test.sol";
 
 import "./TTC.sol";
 import "../types/CVault.sol";
@@ -47,11 +46,8 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
     BountyContract public immutable i_bountyContract;
     TTC public immutable i_ttc;
 
-    constructor(
-        Constituent[] memory initials_constituents,
-        address bountyAddress,
-        address ttcAddress
-    ) Ownable(msg.sender)
+    constructor(Constituent[] memory initials_constituents, address bountyAddress, address ttcAddress)
+        Ownable(msg.sender)
     {
         for (uint256 i = 0; i < initials_constituents.length; i++) {
             s_constituents.push(initials_constituents[i]);
@@ -61,10 +57,7 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
         i_ttc = TTC(ttcAddress); // sets the vault as the Owner of TTC
     }
 
-    function allJoin_Initial(TokenIO[] calldata tokens)
-        external
-        _lock_
-    {
+    function allJoin_Initial(TokenIO[] calldata tokens) external _lock_ {
         require(i_ttc.totalSupply() == 0, "ERR_NOT_FIRST_JOIN");
         _allJoin(tokens, 10 ** i_ttc.decimals()); // mint 1 TTC, sets the initial price
     }
@@ -75,23 +68,16 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
      * @param _tokens The tokens to deposit
      * @param _amounts The amounts of tokens to deposit
      */
-    function allJoin_Out(uint256 out) 
-        external 
-        _lock_
-        _supplyNonZero_
-    {_allJoin_Out(out);}
+    function allJoin_Out(uint256 out) external _lock_ _supplyNonZero_ {
+        _allJoin_Out(out);
+    }
 
     /*
      * @notice all-tokens join, providing the list of tokens a sender is willing to deposit, the contract searches for the best all-tokens join
      * @param _tokens The tokens to deposit
      * @param _amounts The amounts of tokens to deposit
      */
-    function allJoin_Min(TokenIO[] calldata tokens) 
-        external 
-        _lock_
-        _validTokensIn_(tokens)
-        _supplyNonZero_
-    {
+    function allJoin_Min(TokenIO[] calldata tokens) external _lock_ _validTokensIn_(tokens) _supplyNonZero_ {
         uint256 minProp = type(uint256).max;
         for (uint256 i = 0; i < s_constituents.length; i++) {
             uint256 prop = div(tokens[i].amount, ERC20(s_constituents[i].token).balanceOf(address(this)));
@@ -108,13 +94,9 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
      * @notice all-tokens exit
      * @param _in The amount of TTC to exit
      */
-    function allExit(uint256 _in) 
-        external 
-        _lock_
-        _positiveInput_(_in)
-    {
+    function allExit(uint256 _in) external _lock_ _positiveInput_(_in) {
         uint256 propOut = div(_in, i_ttc.totalSupply());
-        uint sizeOut = s_constituents.length;
+        uint256 sizeOut = s_constituents.length;
         TokenIO[] memory tokensOut = new TokenIO[](sizeOut);
         for (uint256 i = 0; i < sizeOut; i++) {
             uint256 balance = IERC20(s_constituents[i].token).balanceOf(address(this));
@@ -130,8 +112,8 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
      * @param constituentIn The token to deposit
      * @param amountIn The amount of tokens to deposit
      */
-    function singleJoin_AmountIn(Constituent calldata constituentIn, uint256 amountIn) 
-        external 
+    function singleJoin_AmountIn(Constituent calldata constituentIn, uint256 amountIn)
+        external
         _lock_
         _positiveInput_(amountIn)
         _supplyNonZero_
@@ -155,19 +137,19 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
         * @param constituentIn The token to deposit
         * @param out The amount of TTC to receive
         */
-    function singleJoin_AmountOut(Constituent calldata constituentIn, uint256 out) 
-        external 
+    function singleJoin_AmountOut(Constituent calldata constituentIn, uint256 out)
+        external
         _lock_
         _supplyNonZero_
         _positiveInput_(out)
     {
         uint256 q = div(out, i_ttc.totalSupply());
-        require (q < ONE, "ERR_FRACTION_OUT_TOO_HIGH");
+        require(q < ONE, "ERR_FRACTION_OUT_TOO_HIGH");
 
         uint256 qP1 = add(q, ONE);
         uint256 power = 100 * ONE / constituentIn.norm;
         uint256 qPlus1Powered = pow(qP1, power);
-        
+
         uint256 balance = IERC20(constituentIn.token).balanceOf(address(this));
         uint256 mulByBalance = mul(qPlus1Powered, balance);
         uint256 amountIn = sub(mulByBalance, balance);
@@ -181,13 +163,9 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
         * @param constituentOut The token to exit
         * @param _in The amount of TTC to exit
         */
-    function singleExit(Constituent calldata constituentOut, uint256 _in) 
-        external 
-        _lock_
-        _positiveInput_(_in)
-    {
+    function singleExit(Constituent calldata constituentOut, uint256 _in) external _lock_ _positiveInput_(_in) {
         uint256 alpha = div(_in, i_ttc.totalSupply());
-        uint oneSubAlpha = sub(ONE, alpha);
+        uint256 oneSubAlpha = sub(ONE, alpha);
 
         uint256 power = 100 * ONE / constituentOut.norm;
         uint256 poweredTerm = pow(oneSubAlpha, power);
@@ -205,10 +183,7 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
      * @param constituentOut The token to exit
      * @param amountOut The amount of tokens to receive
      */
-    function _singleJoin(Constituent calldata constituentIn, uint256 _out, uint256 amountIn) 
-        internal 
-        _isLocked_
-    {
+    function _singleJoin(Constituent calldata constituentIn, uint256 _out, uint256 amountIn) internal _isLocked_ {
         _pullFromSender(constituentIn.token, amountIn);
         i_ttc.mint(msg.sender, _out);
 
@@ -220,10 +195,7 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
      * @param constituentOut The token to exit
      * @param _in The amount of TTC to exit
      */
-    function _singleExit(Constituent calldata constituentOut, uint256 amountOut, uint256 _in) 
-        internal 
-        _isLocked_
-    {   
+    function _singleExit(Constituent calldata constituentOut, uint256 amountOut, uint256 _in) internal _isLocked_ {
         // for a single token exit, the fee is only charged on the amount of tokens that are beyond balance
         (uint256 balanced, uint256 unbalanced) = splitBalancedNotBalanced(amountOut, constituentOut.norm);
         uint256 unbalancedSubFee = chargeBaseFeePlusMarginal(unbalanced, constituentOut.norm);
@@ -241,7 +213,7 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
      * @param _tokens The tokens to deposit
      * @param _amounts The amounts of tokens to deposit
      */
-    function _allJoin(TokenIO[] memory _tokens, uint256 _out) 
+    function _allJoin(TokenIO[] memory _tokens, uint256 _out)
         internal
         _isLocked_ // for safety, should only be called from locked functions to prevent reentrancy
     {
@@ -253,12 +225,9 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
         emit ALL_JOIN(msg.sender, _out);
     }
 
-    function _allJoin_Out(uint256 out) 
-        internal 
-        _isLocked_
-    {
-        uint propIn = div(out, i_ttc.totalSupply()); // the proportion of each token to deposit in order to get "out" amount
-        uint sizeIn = s_constituents.length;
+    function _allJoin_Out(uint256 out) internal _isLocked_ {
+        uint256 propIn = div(out, i_ttc.totalSupply()); // the proportion of each token to deposit in order to get "out" amount
+        uint256 sizeIn = s_constituents.length;
         TokenIO[] memory tokensIn = new TokenIO[](sizeIn);
         for (uint256 i = 0; i < sizeIn; i++) {
             uint256 balance = IERC20(s_constituents[i].token).balanceOf(address(this));
@@ -274,13 +243,13 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
      * @param _tokens The tokens to withdraw
      * @param _amounts The amounts of tokens to withdraw
      */
-    function _allExit(TokenIO[] memory _tokens, uint256 _in) 
+    function _allExit(TokenIO[] memory _tokens, uint256 _in)
         internal
         _isLocked_ // for safety, should only be called from locked functions to prevent reentrancy
     {
         for (uint256 i = 0; i < s_constituents.length; i++) {
             uint256 amountSubFee = chargeBaseFee(_tokens[i].amount);
-            
+
             _pushToSender(_tokens[i].token, amountSubFee);
         }
 
@@ -295,9 +264,7 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
      * @param _amount The amount of tokens to deposit
      * @return bool True if the deposit was successful
      */
-    function _pullFromSender(address _token, uint256 _amount) 
-        internal
-    {
+    function _pullFromSender(address _token, uint256 _amount) internal {
         uint256 balanceBefore = IERC20(_token).balanceOf(address(this));
         IERC20(_token).transferFrom(msg.sender, address(this), _amount);
         uint256 balanceAfter = IERC20(_token).balanceOf(address(this));
@@ -310,19 +277,14 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
         require(success, "ERR_TRANSFER_FAILED");
     }
 
-    function _pushToSender(address _token, uint256 _amount) 
-        internal
-    {
+    function _pushToSender(address _token, uint256 _amount) internal {
         IERC20(_token).transfer(msg.sender, _amount);
     }
 
-    function _checkTokensIn(TokenIO[] calldata _tokens) 
-        internal 
-        view 
-        returns (bool) 
-    {
+    function _checkTokensIn(TokenIO[] calldata _tokens) internal view returns (bool) {
         for (uint256 i = 0; i < s_constituents.length; i++) {
-            if ((s_constituents[i].token != _tokens[i].token) || (_tokens[i].amount == 0)) { // amount should be non-zero
+            if ((s_constituents[i].token != _tokens[i].token) || (_tokens[i].amount == 0)) {
+                // amount should be non-zero
                 return false;
             }
         }
@@ -332,18 +294,15 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
 
     // ------------------ ADMIN FUNCTIONS ------------------
 
-    function createBounty(uint256 amountGive, address tokenGive, address tokenWant) 
-        external 
+    function createBounty(uint256 amountGive, address tokenGive, address tokenWant)
+        external
         onlyOwner
         returns (uint256)
     {
         return i_bountyContract.createBounty(tokenWant, tokenGive, amountGive);
     }
 
-    function fulfillBounty(uint256 _bountyId, uint256 amountIn) 
-        external 
-        onlyOwner
-    {
+    function fulfillBounty(uint256 _bountyId, uint256 amountIn) external onlyOwner {
         // approve the bounty contract to transfer the tokens
         Bounty memory bounty = i_bountyContract.getBounty(_bountyId);
         IERC20(bounty.tokenGive).approve(address(i_bountyContract), bounty.amountGive);
@@ -355,10 +314,7 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
      * @notice Modify the constituents of the vault
      * @param newConstituents The new constituents of the vault
      */
-    function modifyConstituents(Constituent[] calldata newConstituents) 
-        external 
-        onlyOwner
-    {
+    function modifyConstituents(Constituent[] calldata newConstituents) external onlyOwner {
         for (uint256 i = 0; i < newConstituents.length; i++) {
             s_constituents[i] = newConstituents[i];
         }
@@ -369,36 +325,22 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
      * @notice Collect the yield from a fee collectable token
      * @param _token The token to collect the yield from
      */
-    function collectYield(address _token) 
-        external 
-        onlyOwner
-    {
+    function collectYield(address _token) external onlyOwner {
         IFeeCollectable feeCollectable = IFeeCollectable(_token);
         feeCollectable.collectFee();
     }
 
-    function addPriceFeed(address _token, address _dataFeed) 
-        external 
-        onlyOwner
-    {
+    function addPriceFeed(address _token, address _dataFeed) external onlyOwner {
         i_bountyContract.addPriceFeed(_token, _dataFeed);
     }
 
     // ------------ QUERIES ------------
 
-    function constituentsLength() 
-        external 
-        view 
-        returns (uint256) 
-    {
+    function constituentsLength() external view returns (uint256) {
         return s_constituents.length;
     }
 
-    function getTokenWeight(address _token) 
-        external 
-        view 
-        returns (uint8) 
-    {
+    function getTokenWeight(address _token) external view returns (uint8) {
         for (uint256 i = 0; i < s_constituents.length; i++) {
             if (s_constituents[i].token == _token) {
                 return s_constituents[i].norm;

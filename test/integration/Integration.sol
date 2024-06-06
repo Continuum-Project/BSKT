@@ -6,7 +6,6 @@ import {Test} from "forge-std/Test.sol";
 import {DevOpsTools} from "@foundry-devops/src/DevOpsTools.sol";
 import {TTCVault} from "../../src/core/TTCVault.sol";
 import {ContinuumDAO} from "../../src/dao/CDAO.sol";
-import {console} from "forge-std/Test.sol";
 import {BountyContract, Bounty, BountyStatus} from "../../src/dao/CBounty.sol";
 import {CMT} from "../../src/dao/CMT.sol";
 import {TTC} from "../../src/core/TTC.sol";
@@ -14,7 +13,6 @@ import {Constituent, TokenIO} from "../../src/types/CVault.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {GovernorCountingSimple} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
-import {console} from "forge-std/Test.sol";
 import {ERC20Votes} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
 contract Integration is Test {
@@ -55,7 +53,7 @@ contract Integration is Test {
         ttc = daoDeployer.ttc();
         cmt = daoDeployer.cmt();
         dao = daoDeployer.dao();
-        
+
         for (uint256 i = 0; i < 3; i++) {
             defaultCmtHolders[i] = daoDeployer.defaultCmtHolders(i);
         }
@@ -98,7 +96,7 @@ contract Integration is Test {
         address bountyOwner = bounty.owner();
         assertTrue(bountyOwner == address(ttcVault), "BountyContract not owned by DAO");
     }
-    
+
     // asserts that random addresses cannot interact with core contracts
     function testNonOwners_TTCVault() public {
         address randomSender = makeAddr("RANDOM_SENDER");
@@ -193,7 +191,10 @@ contract Integration is Test {
         uint256 proposerBalanceBeforeProposal = ERC20(cmt).balanceOf(defaultCmtHolders[0]);
         ERC20(cmt).approve(address(dao), dao.proposalFee());
         dao.propose(targets, values, calldatas, "Change Quorum Percentage to 50%");
-        assertTrue(ERC20(cmt).balanceOf(defaultCmtHolders[0]) == proposerBalanceBeforeProposal - dao.proposalFee(), "Proposal fee not deducted");
+        assertTrue(
+            ERC20(cmt).balanceOf(defaultCmtHolders[0]) == proposerBalanceBeforeProposal - dao.proposalFee(),
+            "Proposal fee not deducted"
+        );
 
         vm.stopPrank();
 
@@ -240,9 +241,11 @@ contract Integration is Test {
 
         // execute proposal after timelock delay has passed
         dao.execute(targets, values, calldatas, keccak256("Change Quorum Percentage to 50%"));
-        
+
         // assert that proposal fee is returned
-        assertTrue(ERC20(cmt).balanceOf(defaultCmtHolders[0]) == proposerBalanceBeforeProposal, "Proposal fee not returned");
+        assertTrue(
+            ERC20(cmt).balanceOf(defaultCmtHolders[0]) == proposerBalanceBeforeProposal, "Proposal fee not returned"
+        );
         assertTrue(dao.proposalThreshold() == 50, "Quorum not changed");
     }
 
@@ -260,17 +263,17 @@ contract Integration is Test {
         values[0] = 0;
         uint256 onePercentBtc = InitWBTC / ttcVault.getTokenWeight(WBTC_ADDRESS);
         calldatas[0] = abi.encodeWithSignature(
-            "createBounty(address,uint8,address,uint8,uint256)", 
+            "createBounty(address,uint8,address,uint8,uint256)",
             SHIB_ADDRESS,
             ttcVault.getTokenWeight(SHIB_ADDRESS) + 1,
-            WBTC_ADDRESS, 
-            ttcVault.getTokenWeight(WBTC_ADDRESS) - 1, 
+            WBTC_ADDRESS,
+            ttcVault.getTokenWeight(WBTC_ADDRESS) - 1,
             onePercentBtc // swapping 1% of BTC for SHIB
         );
 
         proposeAndExecute(targets, values, calldatas);
 
-        // check that bounty was created 
+        // check that bounty was created
         Bounty memory b = bounty.getBounty(0);
         assertTrue(b.amountGive == onePercentBtc, "Bounty not created");
 
@@ -317,10 +320,10 @@ contract Integration is Test {
         targets[0] = address(dao);
         values[0] = 0;
         calldatas[0] = abi.encodeWithSignature(
-            "createBounty(address,uint8,address,uint8,uint256)", 
+            "createBounty(address,uint8,address,uint8,uint256)",
             LINK_ADDRESS,
             ttcVault.getTokenWeight(SHIB_ADDRESS), // same weight as SHIB
-            SHIB_ADDRESS, 
+            SHIB_ADDRESS,
             0, // SHIB will be 0
             InitSHIB // swapping all SHIB for LINK
         );
@@ -427,7 +430,7 @@ contract Integration is Test {
 
     // ------------ HELPERS ------------
 
-    function getInitialConstituents() internal pure returns (Constituent[] memory){
+    function getInitialConstituents() internal pure returns (Constituent[] memory) {
         Constituent[] memory initialConstituents = new Constituent[](4);
         initialConstituents[0] = Constituent(WETH_ADDRESS, 50);
         initialConstituents[1] = Constituent(WBTC_ADDRESS, 30);

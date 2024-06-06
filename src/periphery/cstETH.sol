@@ -28,11 +28,7 @@ contract CstETH is ICstETH, ERC20, Ownable2Step, ReentrancyGuard {
     IStETH public immutable stETH;
     address public receiver;
 
-    constructor(
-        IStETH _stETH,
-        address _owner,
-        address _receiver
-    ) ERC20("Continuum stETH", "cstETH") Ownable(_owner){
+    constructor(IStETH _stETH, address _owner, address _receiver) ERC20("Continuum stETH", "cstETH") Ownable(_owner) {
         stETH = _stETH;
         receiver = _receiver;
     }
@@ -42,9 +38,7 @@ contract CstETH is ICstETH, ERC20, Ownable2Step, ReentrancyGuard {
     /// @notice Deposit stETH to receive cstETH
     /// @param  amountToMint stETH amount to deposit
     /// @dev Always mints 1 cstETH for depositing 1 stETH
-    function deposit(
-        uint256 amountToMint
-    ) external nonReentrant returns (uint256) {
+    function deposit(uint256 amountToMint) external nonReentrant returns (uint256) {
         stETH.safeTransferFrom(msg.sender, address(this), amountToMint);
         _mint(msg.sender, amountToMint);
         return amountToMint;
@@ -65,11 +59,9 @@ contract CstETH is ICstETH, ERC20, Ownable2Step, ReentrancyGuard {
     /// @param  amountToBurn cstETH amount to burn
     /// @dev Withdraws 1 stETH for burning 1 cstETH
     /// @dev To protect against stETH rebasing down, amountToWithdraw is prorated if total supply exceeds stETH balance
-    function withdraw(
-        uint256 amountToBurn
-    ) external nonReentrant returns (uint256) {
-        uint totalStETH = stETH.balanceOf(address(this));
-        uint amountToWithdraw = amountToBurn;
+    function withdraw(uint256 amountToBurn) external nonReentrant returns (uint256) {
+        uint256 totalStETH = stETH.balanceOf(address(this));
+        uint256 amountToWithdraw = amountToBurn;
         if (totalStETH < totalSupply()) {
             amountToWithdraw = (amountToBurn * totalStETH) / totalSupply();
         }

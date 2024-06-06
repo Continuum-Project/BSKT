@@ -10,6 +10,7 @@ import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
 contract CMT is ERC20, ERC20Permit, ERC20Votes, Ownable {
     string constant NAME = "Continuum Management Token";
     string constant SYMBOL = "CMT";
+
     constructor() ERC20(NAME, SYMBOL) ERC20Permit(NAME) Ownable(msg.sender) {}
 
     function mint(address to, uint256 amount) external onlyOwner {

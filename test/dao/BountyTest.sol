@@ -28,7 +28,7 @@ contract BountyTest is Test {
 
         DeployTTCVault vaultDeployer = new DeployTTCVault();
         TTCVault vault;
-        (, vault, bounty, ) = vaultDeployer.run(msg.sender);
+        (, vault, bounty,) = vaultDeployer.run(msg.sender);
 
         // set price feeds manually
         priceFeeds[WBTC_ADDRESS] = AggregatorV3Interface(0xdeb288F737066589598e9214E782fa5A8eD689e8);
@@ -70,9 +70,9 @@ contract BountyTest is Test {
         assertTrue(b.status == BountyStatus.FULFILLED);
     }
 
-    function _value(address _token, uint256 _amount) internal view returns(uint256) {
+    function _value(address _token, uint256 _amount) internal view returns (uint256) {
         AggregatorV3Interface priceFeed = priceFeeds[_token];
-        (, int price,,,) = priceFeed.latestRoundData();
+        (, int256 price,,,) = priceFeed.latestRoundData();
         return uint256(price) * _amount;
     }
 

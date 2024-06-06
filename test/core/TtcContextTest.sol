@@ -16,8 +16,8 @@ contract TtcTestContext is Test {
     address constant SHIB_ADDRESS = 0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE;
     address constant TONCOIN_ADDRESS = 0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1;
 
-    uint256 constant PRECISION = 10**18;
-    uint256 constant DEFAULT_APPROXIMATION_ERROR = 10**7; // 1/1000000000
+    uint256 constant PRECISION = 10 ** 18;
+    uint256 constant DEFAULT_APPROXIMATION_ERROR = 10 ** 7; // 1/1000000000
 
     // Together, these assets are worth 1mil dollars
     // Prices assumed for tokens:
@@ -41,7 +41,7 @@ contract TtcTestContext is Test {
         vm.selectFork(mainnetFork);
 
         DeployTTCVault vaultDeployer = new DeployTTCVault();
-        (, vault, , ) = vaultDeployer.run(msg.sender);
+        (, vault,,) = vaultDeployer.run(msg.sender);
     }
 
     // initializes the vault with the initial liquidity of $1mil dollars equivalent

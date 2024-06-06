@@ -7,9 +7,7 @@ import "../src/dao/CMT.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {ContinuumDAO} from "../src/dao/CDAO.sol";
 
-import {console} from "forge-std/Test.sol";
-
-contract DeployDAO is Script{
+contract DeployDAO is Script {
     modifier paramteresSet() {
         require(address(vault) != address(0), "Vault not set");
         require(address(bounty) != address(0), "Bounty not set");
@@ -27,18 +25,20 @@ contract DeployDAO is Script{
 
     uint256 public constant TIMELOCK_DELAY = 7200;
 
-    function setupVault(address _owner) public returns(address) {
+    function setupVault(address _owner) public returns (address) {
         address vaultOwner;
         DeployTTCVault deployer = new DeployTTCVault();
         (vaultOwner, vault, bounty, ttc) = deployer.run(_owner);
         return vaultOwner;
     }
 
-    function run() public paramteresSet { // if invoked via forge script
+    function run() public paramteresSet {
+        // if invoked via forge script
         run(msg.sender);
     }
 
-    function run(address owner) public paramteresSet { // if invoked via forge test
+    function run(address owner) public paramteresSet {
+        // if invoked via forge test
         address holder1 = makeAddr("CMT_HOLDER_1");
         address holder2 = makeAddr("CMT_HOLDER_2");
         address holder3 = makeAddr("CMT_HOLDER_3");
@@ -57,7 +57,7 @@ contract DeployDAO is Script{
         timelock.grantRole(timelock.PROPOSER_ROLE(), address(_dao));
         timelock.grantRole(timelock.EXECUTOR_ROLE(), address(_dao));
         timelock.grantRole(timelock.DEFAULT_ADMIN_ROLE(), address(_dao));
-        timelock.grantRole(timelock.EXECUTOR_ROLE(), address(timelock)); 
+        timelock.grantRole(timelock.EXECUTOR_ROLE(), address(timelock));
 
         timelock.renounceRole(timelock.DEFAULT_ADMIN_ROLE(), owner); // renounce admin role
 
@@ -86,7 +86,7 @@ contract DeployDAO is Script{
 
     function defaultMints() internal {
         vm.startBroadcast(address(dao));
-        mintCMT(cmt, defaultCmtHolders[0], 1000); 
+        mintCMT(cmt, defaultCmtHolders[0], 1000);
         mintCMT(cmt, defaultCmtHolders[1], 1000);
         mintCMT(cmt, defaultCmtHolders[2], 1000);
         mintCMT(cmt, address(dao), 10000); // create 10000 CMT tokens for the DAO

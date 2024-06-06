@@ -60,7 +60,7 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
     function testAllJoin_Out() public {
         address sender = liquidSetUp();
 
-        uint denominator = 4; // NOTE: precision errors for odd numbers
+        uint256 denominator = 4; // NOTE: precision errors for odd numbers
 
         uint256 addedWETH = InitWETH / denominator;
         uint256 addedWBTC = InitWBTC / denominator;
@@ -154,7 +154,7 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
 
     function testAllExit() public {
         address sender = liquidSetUp();
-        
+
         // exit half of TTC
         uint256 _in = InitTTC / 2;
 
@@ -286,7 +286,9 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
         assertEq(ERC20(WETH_ADDRESS).balanceOf(sender), 0);
 
         // assert correct WETH amount was added
-        assertApproxEqAbs(ERC20(WETH_ADDRESS).balanceOf(address(vault)), InitWETH + addedWETH, DEFAULT_APPROXIMATION_ERROR);
+        assertApproxEqAbs(
+            ERC20(WETH_ADDRESS).balanceOf(address(vault)), InitWETH + addedWETH, DEFAULT_APPROXIMATION_ERROR
+        );
 
         // gain 0.5 TTC more by joining via WBTC
         // 0.5 TTC / supplyTTC = 0.5 / 1.5 = 0.3333333333333333 = q
@@ -311,16 +313,20 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
         // assert correct WBTC amount was reducted
         // approx error should be reduced since it is only applied for spended to have sufficient balance
         // when checking, we should base approximation on this error
-        assertApproxEqAbs(ERC20(WBTC_ADDRESS).balanceOf(sender), apprxError, DEFAULT_APPROXIMATION_ERROR); 
+        assertApproxEqAbs(ERC20(WBTC_ADDRESS).balanceOf(sender), apprxError, DEFAULT_APPROXIMATION_ERROR);
 
         // assert correct WBTC amount was added
-        assertApproxEqAbs(ERC20(WBTC_ADDRESS).balanceOf(address(vault)), InitWBTC + addedWBTC - apprxError, DEFAULT_APPROXIMATION_ERROR);
+        assertApproxEqAbs(
+            ERC20(WBTC_ADDRESS).balanceOf(address(vault)),
+            InitWBTC + addedWBTC - apprxError,
+            DEFAULT_APPROXIMATION_ERROR
+        );
     }
 
     function testSingleTokenExit() public {
         address sender = liquidSetUp();
 
-        // exit alpha = 0.1 
+        // exit alpha = 0.1
         // When exiting alpha percentage of TTC in token i, a trader gets B_i - B_i * (1 - alpha) ^ (1 / W_i) back
         // For alpha = 0.1 and i = WETH, the amount of WETH to be returned is:
         // 166.6 - 166.6 * (1 - 0.1) ^ (1 / 0.5) = 31654000000000000000

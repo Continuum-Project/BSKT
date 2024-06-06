@@ -4,7 +4,8 @@ pragma solidity ^0.8.20;
 import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {GovernorCountingSimple} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
-import {GovernorVotesQuorumFraction} from "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
+import {GovernorVotesQuorumFraction} from
+    "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import {GovernorTimelockControl} from "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
@@ -14,7 +15,6 @@ import {Bounty} from "./CBounty.sol";
 import {CMT} from "./CMT.sol";
 import {TTCVault} from "../core/TTCVault.sol";
 import {Constituent} from "../types/CVault.sol";
-import {console} from "forge-std/Test.sol";
 
 contract ContinuumDAO is
     Governor,
@@ -45,12 +45,14 @@ contract ContinuumDAO is
 
     mapping(uint256 => address) private proposalToCreator;
     mapping(uint256 => SwapConstituentsRecord) private proposalToConstituents;
-    
-    constructor(
-        CMT _cmt,
-        TTCVault _ttcVault,
-        TimelockController _timelock
-    ) Governor(NAME) GovernorVotes(_cmt) GovernorVotesQuorumFraction(QUORUM_PERCENT) GovernorTimelockControl(_timelock) GovernorSettings(VOTING_DELAY, VOTING_PERIOD, PROPOSAL_THRESHOLD){
+
+    constructor(CMT _cmt, TTCVault _ttcVault, TimelockController _timelock)
+        Governor(NAME)
+        GovernorVotes(_cmt)
+        GovernorVotesQuorumFraction(QUORUM_PERCENT)
+        GovernorTimelockControl(_timelock)
+        GovernorSettings(VOTING_DELAY, VOTING_PERIOD, PROPOSAL_THRESHOLD)
+    {
         cmt = _cmt;
         ttcVault = _ttcVault;
     }
@@ -67,9 +69,10 @@ contract ContinuumDAO is
         for (uint256 i = 0; i < cLength; i++) {
             (address cAddress, uint8 cWeight) = ttcVault.s_constituents(i);
             Constituent memory c = Constituent(cAddress, cWeight);
-            if (cAddress != swapConstituents.tokenOut && cAddress != swapConstituents.tokenIn) { // not changing tokens, skip
+            if (cAddress != swapConstituents.tokenOut && cAddress != swapConstituents.tokenIn) {
+                // not changing tokens, skip
                 newConstituents[i] = c;
-                continue; 
+                continue;
             }
 
             // if cAddress is tokenIn, match the weight
@@ -81,12 +84,14 @@ contract ContinuumDAO is
 
             // if cAddress is tokenOut, adjust the current constituent
             if (cAddress == swapConstituents.tokenOut) {
-                if (swapConstituents.weightOut == 0) { // if token out is removed, replace it with token in
+                if (swapConstituents.weightOut == 0) {
+                    // if token out is removed, replace it with token in
                     c.norm = swapConstituents.weightIn;
                     c.token = swapConstituents.tokenIn;
                     newConstituents[i] = c;
                     continue;
-                } else { // if token remains in vault, adjust the weight
+                } else {
+                    // if token remains in vault, adjust the weight
                     c.norm = swapConstituents.weightOut;
                     newConstituents[i] = c;
                     continue;
@@ -104,7 +109,7 @@ contract ContinuumDAO is
         uint8 _tokenOutWeight,
         uint256 _amountOut
     ) public onlyGovernance returns (uint256) {
-        uint256 bountyID =  ttcVault.createBounty(_amountOut, _tokenOut, _tokenIn);
+        uint256 bountyID = ttcVault.createBounty(_amountOut, _tokenOut, _tokenIn);
 
         proposalToConstituents[bountyID] = SwapConstituentsRecord(_tokenIn, _tokenInWeight, _tokenOut, _tokenOutWeight);
 
@@ -134,11 +139,11 @@ contract ContinuumDAO is
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description
-    ) public override(Governor) returns(uint256) {
+    ) public override(Governor) returns (uint256) {
         // charge proposal fee
         cmt.transferFrom(msg.sender, address(this), proposalFee);
 
-        // propose 
+        // propose
         uint256 proposalId = super.propose(targets, values, calldatas, description);
 
         // log creator
@@ -152,7 +157,7 @@ contract ContinuumDAO is
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) public payable override(Governor) returns(uint256) {
+    ) public payable override(Governor) returns (uint256) {
         // return proposal fee on successful execution
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
         address creator = proposalToCreator[proposalId];
@@ -161,13 +166,22 @@ contract ContinuumDAO is
         return super.execute(targets, values, calldatas, descriptionHash);
     }
 
-    function state(uint256 proposalId) public view override(Governor, GovernorTimelockControl) returns (ProposalState) {
+    function state(uint256 proposalId)
+        public
+        view
+        override(Governor, GovernorTimelockControl)
+        returns (ProposalState)
+    {
         return super.state(proposalId);
     }
 
-    function proposalNeedsQueuing(
-        uint256 proposalId
-    ) public view virtual override(Governor, GovernorTimelockControl) returns (bool) {
+    function proposalNeedsQueuing(uint256 proposalId)
+        public
+        view
+        virtual
+        override(Governor, GovernorTimelockControl)
+        returns (bool)
+    {
         return super.proposalNeedsQueuing(proposalId);
     }
 

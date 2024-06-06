@@ -5,10 +5,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
-
 import {IBountyContract, WETHDataFeed} from "../interface/IBounty.sol";
 import {InitialETHDataFeeds, BountyStatus, Bounty} from "../types/CBounty.sol";
-import {console} from "forge-std/Test.sol";
 
 contract BountyContract is IBountyContract, Ownable {
     modifier _activeBounty_(uint256 _bountyId) {
@@ -42,9 +40,9 @@ contract BountyContract is IBountyContract, Ownable {
     }
 
     function createBounty(address _tokenWant, address _tokenGive, uint256 _amountGive)
-        external 
+        external
         onlyOwner
-        returns(uint256)
+        returns (uint256)
     {
         Bounty memory bounty = Bounty({
             bountyId: bountyCount,
@@ -63,8 +61,8 @@ contract BountyContract is IBountyContract, Ownable {
         return bounty.bountyId;
     }
 
-    function fulfillBounty(uint256 _bountyId, uint256 amountIn) 
-        external 
+    function fulfillBounty(uint256 _bountyId, uint256 amountIn)
+        external
         onlyOwner // only DAO can fulfill bounties, though anyone can fulfill it through DAO
         _activeBounty_(_bountyId)
     {
@@ -75,16 +73,12 @@ contract BountyContract is IBountyContract, Ownable {
         emit BOUNTY_FULFILLED(tx.origin, _bountyId);
     }
 
-    function getBounty(uint256 _bountyId) 
-        external 
-        view 
-        returns (Bounty memory)
-    {
+    function getBounty(uint256 _bountyId) external view returns (Bounty memory) {
         return bounties[_bountyId];
     }
 
-    function addPriceFeed(address _token, address _dataFeed) 
-        external 
+    function addPriceFeed(address _token, address _dataFeed)
+        external
         _nonDuplicateDatafeed_(_token) // not really needed, since only dao can invoke it
         onlyOwner
     {
@@ -93,7 +87,7 @@ contract BountyContract is IBountyContract, Ownable {
         emit PRICE_FEED_ADDED(_token, _dataFeed);
     }
 
-    function _fulfillBounty(Bounty memory bounty, uint256 amountIn) 
+    function _fulfillBounty(Bounty memory bounty, uint256 amountIn)
         internal
         _hasDatafeed_(bounty.tokenWant)
         _hasDatafeed_(bounty.tokenGive)
@@ -101,7 +95,7 @@ contract BountyContract is IBountyContract, Ownable {
         address fulfiller = tx.origin; // not msg.sender, because fulfill bounty is called through dao
         address creator = bounty.creator;
 
-        // find value of tokenWant 
+        // find value of tokenWant
         address tokenWant = bounty.tokenWant;
         uint256 tokenWantValue = _value(tokenWant, amountIn);
 
@@ -117,14 +111,9 @@ contract BountyContract is IBountyContract, Ownable {
         ERC20(tokenGive).transferFrom(creator, fulfiller, bounty.amountGive);
     }
 
-    function _value(address _token, uint256 _amount) 
-        internal 
-        view 
-        _hasDatafeed_(_token)
-        returns (uint256)
-    {
+    function _value(address _token, uint256 _amount) internal view _hasDatafeed_(_token) returns (uint256) {
         AggregatorV3Interface tokenFeed = dataFeeds[_token];
-        (, int256 tokenPrice, , , ) = tokenFeed.latestRoundData();
+        (, int256 tokenPrice,,,) = tokenFeed.latestRoundData();
         return _amount * uint256(tokenPrice);
     }
 }

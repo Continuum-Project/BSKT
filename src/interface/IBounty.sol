@@ -7,27 +7,13 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../types/CBounty.sol";
 
 interface IBountyContract {
-    event BOUNTY_CREATED (
-        address indexed sender, 
-        uint256 indexed bountyId,
-        uint256 indexed amount
-    );
+    event BOUNTY_CREATED(address indexed sender, uint256 indexed bountyId, uint256 indexed amount);
 
-    event BOUNTY_FULFILLED (
-        address indexed fulfiller, 
-        uint256 indexed bountyId
-    );
+    event BOUNTY_FULFILLED(address indexed fulfiller, uint256 indexed bountyId);
 
-    event PRICE_FEED_ADDED (
-        address indexed token,
-        address indexed dataFeed
-    );
+    event PRICE_FEED_ADDED(address indexed token, address indexed dataFeed);
 
-    function createBounty(
-        address _tokenIn,
-        address _tokenOut,
-        uint256 _amountOut
-    ) external returns (uint256);
+    function createBounty(address _tokenIn, address _tokenOut, uint256 _amountOut) external returns (uint256);
 
     function fulfillBounty(uint256 _bountyId, uint256 amountIn) external;
 
@@ -43,6 +29,7 @@ contract WETHDataFeed is AggregatorV3Interface {
     constructor(address _weth) {
         weth = ERC20(_weth);
     }
+
     function decimals() external view override returns (uint8) {
         return weth.decimals();
     }
@@ -55,11 +42,21 @@ contract WETHDataFeed is AggregatorV3Interface {
         return 1;
     }
 
-    function getRoundData(uint80 _roundId) external pure override returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound) {
+    function getRoundData(uint80 _roundId)
+        external
+        pure
+        override
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
+    {
         return (_roundId, 1, 0, 0, 0);
     }
 
-    function latestRoundData() external pure override returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound) {
-        return (0, 10**18, 0, 0, 0);
+    function latestRoundData()
+        external
+        pure
+        override
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
+    {
+        return (0, 10 ** 18, 0, 0, 0);
     }
 }
