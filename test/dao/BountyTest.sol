@@ -59,7 +59,7 @@ contract BountyTest is Test {
     function testFulfillBounty() public {
         testCreateBounty(); // create a bounty, also tests createBounty
 
-        uint256 fulfilmentAmountBTC =  10 ** ERC20(WBTC_ADDRESS).decimals();
+        uint256 fulfilmentAmountBTC = 10 ** ERC20(WBTC_ADDRESS).decimals();
 
         vm.startPrank(vaultAddress, vaultAddress);
         dealAndApprove(WBTC_ADDRESS, vaultAddress, fulfilmentAmountBTC); // deal 1 btc
