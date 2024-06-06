@@ -14,6 +14,7 @@ import {Bounty} from "./CBounty.sol";
 import {CMT} from "./CMT.sol";
 import {TTCVault} from "../core/TTCVault.sol";
 import {Constituent} from "../types/CVault.sol";
+import {console} from "forge-std/Test.sol";
 
 contract ContinuumDAO is
     Governor,
@@ -42,8 +43,8 @@ contract ContinuumDAO is
         uint8 weightOut;
     }
 
-    mapping(uint256 => address) public proposalToCreator;
-    mapping(uint256 => SwapConstituentsRecord) public proposalToConstituents;
+    mapping(uint256 => address) private proposalToCreator;
+    mapping(uint256 => SwapConstituentsRecord) private proposalToConstituents;
     
     constructor(
         CMT _cmt,
@@ -55,27 +56,42 @@ contract ContinuumDAO is
     }
 
     // ----------- CUSTOM -----------
+
     function fulfillBounty(uint256 _bountyId, uint256 amountIn) public {
         ttcVault.fulfillBounty(_bountyId, amountIn);
 
         SwapConstituentsRecord memory swapConstituents = proposalToConstituents[_bountyId];
-        if (swapConstituents.tokenIn == address(0)) { return; } // means that no need to swap constituents for this proposal
-
         uint256 cLength = ttcVault.constituentsLength();
-
         Constituent[] memory newConstituents = new Constituent[](cLength);
 
         for (uint256 i = 0; i < cLength; i++) {
             (address cAddress, uint8 cWeight) = ttcVault.s_constituents(i);
             Constituent memory c = Constituent(cAddress, cWeight);
-
-            if (cAddress != swapConstituents.tokenOut) { 
+            if (cAddress != swapConstituents.tokenOut && cAddress != swapConstituents.tokenIn) { // not changing tokens, skip
                 newConstituents[i] = c;
                 continue; 
             }
 
-            // means we found a token that we want to change
-            newConstituents[i] = Constituent(swapConstituents.tokenIn, swapConstituents.weightIn);
+            // if cAddress is tokenIn, match the weight
+            if (cAddress == swapConstituents.tokenIn) {
+                c.norm = swapConstituents.weightIn;
+                newConstituents[i] = c;
+                continue;
+            }
+
+            // if cAddress is tokenOut, adjust the current constituent
+            if (cAddress == swapConstituents.tokenOut) {
+                if (swapConstituents.weightOut == 0) { // if token out is removed, replace it with token in
+                    c.norm = swapConstituents.weightIn;
+                    c.token = swapConstituents.tokenIn;
+                    newConstituents[i] = c;
+                    continue;
+                } else { // if token remains in vault, adjust the weight
+                    c.norm = swapConstituents.weightOut;
+                    newConstituents[i] = c;
+                    continue;
+                }
+            }
         }
 
         ttcVault.modifyConstituents(newConstituents);
@@ -89,6 +105,7 @@ contract ContinuumDAO is
         uint256 _amountOut
     ) public onlyGovernance returns (uint256) {
         uint256 bountyID =  ttcVault.createBounty(_amountOut, _tokenOut, _tokenIn);
+
         proposalToConstituents[bountyID] = SwapConstituentsRecord(_tokenIn, _tokenInWeight, _tokenOut, _tokenOutWeight);
 
         return bountyID;

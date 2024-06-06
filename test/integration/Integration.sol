@@ -7,10 +7,10 @@ import {DevOpsTools} from "@foundry-devops/src/DevOpsTools.sol";
 import {TTCVault} from "../../src/core/TTCVault.sol";
 import {ContinuumDAO} from "../../src/dao/CDAO.sol";
 import {console} from "forge-std/Test.sol";
-import {BountyContract} from "../../src/dao/CBounty.sol";
+import {BountyContract, Bounty, BountyStatus} from "../../src/dao/CBounty.sol";
 import {CMT} from "../../src/dao/CMT.sol";
 import {TTC} from "../../src/core/TTC.sol";
-import {Constituent} from "../../src/types/CVault.sol";
+import {Constituent, TokenIO} from "../../src/types/CVault.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {GovernorCountingSimple} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
@@ -35,6 +35,11 @@ contract Integration is Test {
     address constant WBTC_ADDRESS = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
     address constant SHIB_ADDRESS = 0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE;
     address constant TONCOIN_ADDRESS = 0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1;
+
+    uint256 constant InitWETH = 166.6 * 10 ** 18;
+    uint256 constant InitWBTC = 5 * 10 ** 18;
+    uint256 constant InitSHIB = 3333333333.3 * 10 ** 18;
+    uint256 constant InitTONCOIN = 14285.7 * 10 ** 18;
 
     uint256 public timelockDelay;
 
@@ -236,6 +241,80 @@ contract Integration is Test {
         assertTrue(dao.proposalThreshold() == 50, "Quorum not changed");
     }
 
+    function testDAO_modifyConstituentsViaProposal() public {
+        vm.roll(block.number + 1); // move one block
+
+        initLiquidity(makeAddr("sender"));
+
+        address[] memory targets = new address[](1);
+        uint256[] memory values = new uint256[](1);
+        bytes[] memory calldatas = new bytes[](1);
+
+        // First, create a bounty
+        targets[0] = address(dao);
+        values[0] = 0;
+        uint256 onePercentBtc = InitWBTC / ttcVault.getTokenWeight(WBTC_ADDRESS);
+        calldatas[0] = abi.encodeWithSignature(
+            "createBounty(address,uint8,address,uint8,uint256)", 
+            SHIB_ADDRESS,
+            ttcVault.getTokenWeight(SHIB_ADDRESS) + 1,
+            WBTC_ADDRESS, 
+            ttcVault.getTokenWeight(WBTC_ADDRESS) - 1, 
+            onePercentBtc // swapping 1% of BTC for SHIB
+        );
+
+        vm.startPrank(defaultCmtHolders[0]);
+
+        ERC20(cmt).approve(address(dao), dao.proposalFee());
+        dao.propose(targets, values, calldatas, "Swap 1% of WBTC for SHIB");
+
+        vm.stopPrank();
+
+        vm.roll(block.number + dao.votingDelay() + 1); // start voting period
+
+        uint256 proposalID = dao.hashProposal(targets, values, calldatas, keccak256("Swap 1% of WBTC for SHIB"));
+
+        vm.startPrank(address(dao)); // big voter votes
+        uint8 forVote = uint8(GovernorCountingSimple.VoteType.For);
+        dao.castVote(proposalID, forVote);
+        vm.stopPrank();
+
+        vm.roll(block.number + dao.votingPeriod() + 1); // finish voting period
+
+        dao.queue(targets, values, calldatas, keccak256("Swap 1% of WBTC for SHIB"));
+
+        vm.warp(block.timestamp + timelockDelay + 1); // finish timelock delay
+
+        // create bounty
+        dao.execute(targets, values, calldatas, keccak256("Swap 1% of WBTC for SHIB"));
+
+        // check that bounty was created 
+        Bounty memory b = bounty.getBounty(0);
+        assertTrue(b.amountGive == onePercentBtc, "Bounty not created");
+
+        // Second, fulfill this bounty
+        address fulfiller = makeAddr("fulfiller");
+        targets[0] = address(dao);
+        values[0] = 0;
+        calldatas[0] = abi.encodeWithSignature("fulfillBounty(uint256,uint256)", 0, onePercentBtc);
+
+        vm.startPrank(fulfiller, fulfiller);
+        // TODO: make this dynamic
+        uint256 hardcodedSHIBToBTC = 2307692307 * (onePercentBtc + 1) * 10 ** ERC20(SHIB_ADDRESS).decimals(); // ~2307692307 per one btc, +1 to make sure oracle will pass the amount
+        dealAndApprove(SHIB_ADDRESS, fulfiller, hardcodedSHIBToBTC);
+
+        ERC20(SHIB_ADDRESS).approve(address(bounty), hardcodedSHIBToBTC);
+        dao.fulfillBounty(0, hardcodedSHIBToBTC);
+
+        vm.stopPrank();
+
+        b = bounty.getBounty(0);
+        assertTrue(b.status == BountyStatus.FULFILLED, "Bounty not fulfilled");
+
+        assertTrue(ttcVault.getTokenWeight(WBTC_ADDRESS) == 29, "WBTC weight not changed");
+        assertTrue(ttcVault.getTokenWeight(SHIB_ADDRESS) == 11, "SHIB weight not changed");
+    }
+
     // ------------ HELPERS ------------
 
     function getInitialConstituents() internal pure returns (Constituent[] memory){
@@ -246,5 +325,34 @@ contract Integration is Test {
         initialConstituents[3] = Constituent(TONCOIN_ADDRESS, 10);
 
         return initialConstituents;
+    }
+
+    function getDefaultTokens() public pure returns (TokenIO[] memory) {
+        TokenIO[] memory tokens = new TokenIO[](4);
+        tokens[0] = TokenIO(WETH_ADDRESS, InitWETH);
+        tokens[1] = TokenIO(WBTC_ADDRESS, InitWBTC);
+        tokens[2] = TokenIO(SHIB_ADDRESS, InitSHIB);
+        tokens[3] = TokenIO(TONCOIN_ADDRESS, InitTONCOIN);
+
+        return tokens;
+    }
+
+    function dealAndApprove(address token, address sender, uint256 amount) public {
+        ERC20(token).approve(address(ttcVault), amount);
+        deal(token, sender, amount);
+    }
+
+    function initLiquidity(address sender) public {
+        vm.startPrank(sender);
+        TokenIO[] memory tokens = getDefaultTokens();
+
+        // Approve the vault to spend the tokens
+        dealAndApprove(WETH_ADDRESS, sender, InitWETH);
+        dealAndApprove(WBTC_ADDRESS, sender, InitWBTC);
+        dealAndApprove(SHIB_ADDRESS, sender, InitSHIB);
+        dealAndApprove(TONCOIN_ADDRESS, sender, InitTONCOIN);
+
+        ttcVault.allJoin_Initial(tokens);
+        vm.stopPrank();
     }
 }

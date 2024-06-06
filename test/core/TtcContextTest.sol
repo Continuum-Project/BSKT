@@ -42,8 +42,6 @@ contract TtcTestContext is Test {
 
         DeployTTCVault vaultDeployer = new DeployTTCVault();
         (, vault, , ) = vaultDeployer.run(msg.sender);
-        console.log("Vault owner: ", vault.owner());
-        console.log("Sender: ", msg.sender);
     }
 
     // initializes the vault with the initial liquidity of $1mil dollars equivalent

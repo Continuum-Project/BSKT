@@ -61,7 +61,7 @@ contract BountyTest is Test {
 
         uint256 fulfilmentAmountBTC =  10 ** ERC20(WBTC_ADDRESS).decimals();
 
-        vm.startPrank(vaultAddress);
+        vm.startPrank(vaultAddress, vaultAddress);
         dealAndApprove(WBTC_ADDRESS, vaultAddress, fulfilmentAmountBTC); // deal 1 btc
         bounty.fulfillBounty(0, fulfilmentAmountBTC); // fulfill the bounty, 1 BTC
         vm.stopPrank();

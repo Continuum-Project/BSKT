@@ -360,9 +360,7 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
         onlyOwner
     {
         for (uint256 i = 0; i < newConstituents.length; i++) {
-            if (s_constituents[i].token != newConstituents[i].token) {
-                s_constituents[i] = newConstituents[i];
-            }
+            s_constituents[i] = newConstituents[i];
         }
     }
 
@@ -387,5 +385,19 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
         returns (uint256) 
     {
         return s_constituents.length;
+    }
+
+    function getTokenWeight(address _token) 
+        external 
+        view 
+        returns (uint8) 
+    {
+        for (uint256 i = 0; i < s_constituents.length; i++) {
+            if (s_constituents[i].token == _token) {
+                return s_constituents[i].norm;
+            }
+        }
+
+        return 0;
     }
 }

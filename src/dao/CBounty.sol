@@ -48,7 +48,7 @@ contract BountyContract is IBountyContract, Ownable {
     {
         Bounty memory bounty = Bounty({
             bountyId: bountyCount,
-            creator: msg.sender, // should be DAO
+            creator: owner(),
             tokenWant: _tokenWant,
             tokenGive: _tokenGive,
             amountGive: _amountGive,
@@ -58,7 +58,7 @@ contract BountyContract is IBountyContract, Ownable {
         bounties[bountyCount] = bounty;
         bountyCount++;
 
-        emit BOUNTY_CREATED(msg.sender, bounty.bountyId, _amountGive);
+        emit BOUNTY_CREATED(tx.origin, bounty.bountyId, _amountGive);
 
         return bounty.bountyId;
     }
