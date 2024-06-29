@@ -197,9 +197,7 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
      */
     function _singleExit(Constituent calldata constituentOut, uint256 amountOut, uint256 _in) internal _isLocked_ {
         // for a single token exit, the fee is only charged on the amount of tokens that are beyond balance
-        (uint256 balanced, uint256 unbalanced) = splitBalancedNotBalanced(amountOut, constituentOut.norm);
-        uint256 unbalancedSubFee = chargeBaseFeePlusMarginal(unbalanced, constituentOut.norm);
-        uint256 amountOutSubFee = add(balanced, unbalancedSubFee);
+        uint256 amountOutSubFee = chargeBaseFeePlusMarginal(amountOut, constituentOut.norm);
 
         _pushToSender(constituentOut.token, amountOutSubFee);
         i_ttc.burn(msg.sender, _in);

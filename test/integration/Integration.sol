@@ -451,8 +451,8 @@ contract Integration is Test {
     }
 
     function dealAndApprove(address token, address sender, uint256 amount) public {
-        ERC20(token).approve(address(ttcVault), amount);
         deal(token, sender, amount);
+        ERC20(token).approve(address(ttcVault), amount);
     }
 
     function initLiquidity(address sender) public {

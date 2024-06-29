@@ -334,11 +334,14 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
 
         // test weth
         uint256 expectedWETH = 31654000000000000000;
-        uint8 ethNorm = 50;
 
-        (uint256 balanced, uint256 unbalanced) = splitBalancedNotBalanced(expectedWETH, ethNorm);
-        uint256 unbalancedSubFee = chargeBaseFeePlusMarginal(unbalanced, ethNorm);
-        expectedWETH = balanced + unbalancedSubFee;
+        // base fee is 0.15% of the amount
+        // marginal fee is 0.001% * (1 - 0.5) * 100 = 0.05%
+        // total fee should be 0.2%
+        // hence, expected WETH is 99.8% of the expected amount
+        expectedWETH = 998 * expectedWETH / 1000;
+
+        // expectedWETH = 
 
         vm.startPrank(sender);
         vault.singleExit(Constituent(WETH_ADDRESS, 50), 1 * PRECISION / 10);
@@ -359,11 +362,12 @@ contract TTCVaultTest is TtcTestContext, TTCFees {
         // For alpha to be 0.1, amount in should be 0.1 * 0.9 = 0.09 and i = SHIB, the amount of SHIB to be returned is:
         // 3333333333.3 - 3333333333.3 * (1 - 0.1) ^ (1 / 0.1) = 2171071866311622614670000000
         uint256 expectedSHIB = 2171071866311622614670000000;
-        uint8 shibNorm = 10;
 
-        (balanced, unbalanced) = splitBalancedNotBalanced(expectedSHIB, shibNorm);
-        unbalancedSubFee = chargeBaseFeePlusMarginal(unbalanced, shibNorm);
-        expectedSHIB = balanced + unbalancedSubFee;
+        // base fee is 0.15% of the amount
+        // marginal fee is 0.001% * (1 - 0.1) * 100 = 0.09%
+        // total fee should be 0.24%
+        // hence, expected SHIB is 99.76% of the expected amount
+        expectedSHIB = 9976 * expectedSHIB / 10000;
 
         vm.startPrank(sender);
         vault.singleExit(Constituent(SHIB_ADDRESS, 10), 9 * PRECISION / 100);

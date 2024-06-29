@@ -6,14 +6,14 @@ import "./TTCConstants.sol";
 contract TTCFees is TTCConstants {
     event FeeCharged(address indexed sender, uint256 fee);
 
-    uint256 public constant BASE_REDEMPTION_FEE = 5 * ONE / 10000; // 0.05%
+    uint256 public constant BASE_REDEMPTION_FEE = 15 * ONE / 10000; // 0.15%
 
     // The fee charged during a single token join in addition to base fee times (1 - W_i) * 100
-    // Fee charged for token with normalized weight of 0.2 is 0.05% + (1 - 0.2) * 0.001% * 100 = 0.05% + 0.08% = 0.13%
+    // Fee charged for token with normalized weight of 0.2 is 0.15% + (1 - 0.2) * 0.001% * 100 = 0.15% + 0.08% = 0.23%
     uint256 public constant FEE_MARGIN = 10 * ONE / 1000000; // 0.001%
 
     /**
-     * @notice Charge a base fee of 0.05% for an amount
+     * @notice Charge a base fee of 0.15% for an amount
      * @param amount The amount of tokens to charge the fee on
      * @return The amount of tokens after the fee has been charged
      */
@@ -44,10 +44,10 @@ contract TTCFees is TTCConstants {
      * @param norm The normalized weight of the token
      * @return norm*amount/100, (100-norm)*amount/100
      */
-    function splitBalancedNotBalanced(uint256 amount, uint8 norm) internal pure returns (uint256, uint256) {
-        uint256 _norm = norm * ONE / 100;
-        uint256 amountBalanced = amount * _norm / ONE;
+    // function splitBalancedNotBalanced(uint256 amount, uint8 norm) internal pure returns (uint256, uint256) {
+    //     uint256 _norm = norm * ONE / 100;
+    //     uint256 amountBalanced = amount * _norm / ONE;
 
-        return (amountBalanced, amount - amountBalanced);
-    }
+    //     return (amountBalanced, amount - amountBalanced);
+    // }
 }
