@@ -8,7 +8,7 @@ import {TimelockController} from "@openzeppelin/contracts/governance/TimelockCon
 import {ContinuumDAO} from "../src/dao/CDAO.sol";
 
 contract DeployDAO is Script {
-    modifier paramteresSet() {
+    modifier parametersSet() {
         require(address(vault) != address(0), "Vault not set");
         require(address(bounty) != address(0), "Bounty not set");
         require(address(ttc) != address(0), "TTC not set");
@@ -32,12 +32,12 @@ contract DeployDAO is Script {
         return vaultOwner;
     }
 
-    function run() public paramteresSet {
+    function run() public parametersSet {
         // if invoked via forge script
         run(msg.sender);
     }
 
-    function run(address owner) public paramteresSet {
+    function run(address owner) public parametersSet {
         // if invoked via forge test
         address holder1 = makeAddr("CMT_HOLDER_1");
         address holder2 = makeAddr("CMT_HOLDER_2");
@@ -47,6 +47,7 @@ contract DeployDAO is Script {
         address[] memory executors = new address[](0); // empty executors
 
         vm.startBroadcast(owner);
+        
         CMT _cmt = new CMT();
         TimelockController timelock = new TimelockController(TIMELOCK_DELAY, proposers, executors, owner);
         ContinuumDAO _dao = new ContinuumDAO(_cmt, vault, timelock);
