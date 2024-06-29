@@ -12,6 +12,12 @@ contract TTCFees is TTCConstants {
     // Fee charged for token with normalized weight of 0.2 is 0.15% + (1 - 0.2) * 0.001% * 100 = 0.15% + 0.08% = 0.23%
     uint256 public constant FEE_MARGIN = 10 * ONE / 1000000; // 0.001%
 
+    // Annual vault fee
+    uint256 public constant ANNUAL_FEE = 9 * ONE / 1000; // 0.9%
+    uint256 public constant ANNUAL_FEE_PERIOD = 2623000; // blocks, slightly more than 1 year
+
+    uint256[] public annualFeeBlockstamps;
+
     /**
      * @notice Charge a base fee of 0.15% for an amount
      * @param amount The amount of tokens to charge the fee on
@@ -38,16 +44,7 @@ contract TTCFees is TTCConstants {
         return amount - fee;
     }
 
-    /**
-     * @notice Split an amount into two parts, one balanced and one not balanced
-     * @param amount The amount to split
-     * @param norm The normalized weight of the token
-     * @return norm*amount/100, (100-norm)*amount/100
-     */
-    // function splitBalancedNotBalanced(uint256 amount, uint8 norm) internal pure returns (uint256, uint256) {
-    //     uint256 _norm = norm * ONE / 100;
-    //     uint256 amountBalanced = amount * _norm / ONE;
-
-    //     return (amountBalanced, amount - amountBalanced);
-    // }
+    function recordAnnualFeeBlockstamp() internal {
+        annualFeeBlockstamps.push(block.number);
+    }
 }

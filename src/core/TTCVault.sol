@@ -55,6 +55,9 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
 
         i_bountyContract = BountyContract(bountyAddress);
         i_ttc = TTC(ttcAddress); // sets the vault as the Owner of TTC
+
+        // set the block of creation as the first block into the blockstamps array
+        recordAnnualFeeBlockstamp();
     }
 
     function allJoin_Initial(TokenIO[] calldata tokens) external _lock_ {
@@ -291,6 +294,23 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
     }
 
     // ------------------ ADMIN FUNCTIONS ------------------
+
+    /*
+    * @notice Charge the annual fee of 0.9%
+    * Anyone can call this function, but it can only be called once per year
+    * The fee is always sent to the owner of the vault (DAO)
+    */
+    function chargeAnnualFee() public {
+        require(annualFeeBlockstamps[annualFeeBlockstamps.length - 1] + ANNUAL_FEE_PERIOD < block.number, "ERR_FEE_ALREADY_CHARGED");
+        
+        for (uint256 i = 0; i < s_constituents.length; i++) {
+            uint256 balance = IERC20(s_constituents[i].token).balanceOf(address(this));
+            uint256 fee = balance * ANNUAL_FEE / ONE;
+            IERC20(s_constituents[i].token).transfer(owner(), fee);
+        }
+        
+        recordAnnualFeeBlockstamp();
+    }
 
     function createBounty(uint256 amountGive, address tokenGive, address tokenWant)
         external
