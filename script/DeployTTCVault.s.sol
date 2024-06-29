@@ -20,11 +20,14 @@ contract DeployTTCVault is Script {
         InitialETHDataFeeds[] memory initialDataFeeds = getInitialDataFeeds();
 
         vm.startBroadcast(owner);
+        
         BountyContract bounty = new BountyContract(initialDataFeeds, WETH_ADDRESS);
         TTC ttc = new TTC("Top Ten Continuum", "TTC");
         TTCVault ttcVault = new TTCVault(initialConstituents, address(bounty), address(ttc));
+
         ttc.transferOwnership(address(ttcVault));
         bounty.transferOwnership(address(ttcVault));
+
         vm.stopBroadcast();
 
         return (owner, ttcVault, bounty, ttc);

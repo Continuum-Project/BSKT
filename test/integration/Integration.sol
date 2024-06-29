@@ -15,6 +15,8 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {GovernorCountingSimple} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import {ERC20Votes} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
+import {console} from "forge-std/Test.sol";
+
 contract Integration is Test {
     ContinuumDAO public dao;
     TTCVault public ttcVault;
@@ -497,5 +499,57 @@ contract Integration is Test {
         dao.execute(targets, values, calldatas, keccak256("DEFAULT"));
 
         vm.stopPrank();
+    }
+
+    function test_chargeAnnualFee() public {
+        uint256 annualFee = ttcVault.ANNUAL_FEE(); // 0.9% of 1e18
+        uint256 annualFeePeriod = ttcVault.ANNUAL_FEE_PERIOD(); // slightly more than 1 year
+
+        uint256 initialDAOBalance_WETH = ERC20(WETH_ADDRESS).balanceOf(address(dao));
+        uint256 initialDAOBalance_WBTC = ERC20(WBTC_ADDRESS).balanceOf(address(dao));
+        uint256 initialDAOBalance_SHIB = ERC20(SHIB_ADDRESS).balanceOf(address(dao));
+        uint256 initialDAOBalance_TONCOIN = ERC20(TONCOIN_ADDRESS).balanceOf(address(dao));
+
+        uint256 initialBlockNumber = block.number;
+
+        vm.expectRevert();
+        ttcVault.chargeAnnualFee();
+
+        vm.roll(initialBlockNumber + annualFeePeriod);
+
+        vm.expectRevert();
+        ttcVault.chargeAnnualFee();
+
+        vm.roll(initialBlockNumber + annualFeePeriod + 1);
+
+        ttcVault.chargeAnnualFee();
+
+        uint256 finalDAOBalance_WETH = ERC20(WETH_ADDRESS).balanceOf(address(dao));
+        uint256 finalDAOBalance_WBTC = ERC20(WBTC_ADDRESS).balanceOf(address(dao));
+        uint256 finalDAOBalance_SHIB = ERC20(SHIB_ADDRESS).balanceOf(address(dao));
+        uint256 finalDAOBalance_TONCOIN = ERC20(TONCOIN_ADDRESS).balanceOf(address(dao));
+
+        assertTrue(
+            finalDAOBalance_WETH == initialDAOBalance_WETH + (annualFee * initialDAOBalance_WETH) / 1e18,
+            "WETH annual fee not charged"
+        );
+
+        assertTrue(
+            finalDAOBalance_WBTC == initialDAOBalance_WBTC + (annualFee * initialDAOBalance_WBTC) / 1e18,
+            "WBTC annual fee not charged"
+        );
+
+        assertTrue(
+            finalDAOBalance_SHIB == initialDAOBalance_SHIB + (annualFee * initialDAOBalance_SHIB) / 1e18,
+            "SHIB annual fee not charged"
+        );
+
+        assertTrue(
+            finalDAOBalance_TONCOIN == initialDAOBalance_TONCOIN + (annualFee * initialDAOBalance_TONCOIN) / 1e18,
+            "TONCOIN annual fee not charged"
+        );
+
+        // check that annual fee is recorded
+        assertTrue(ttcVault.annualFeeBlockstamps(1) == initialBlockNumber + annualFeePeriod + 1, "Annual fee not recorded");
     }
 }
