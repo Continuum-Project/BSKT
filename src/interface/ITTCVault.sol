@@ -22,7 +22,7 @@ interface ITTCVault {
 
     function singleJoin_AmountOut(Constituent calldata constituentIn, uint256 out) external;
 
-    function singleExit(Constituent calldata constituentOut, uint256 _in) external;
+    // function singleExit(Constituent calldata constituentOut, uint256 _in) external;
 
     function modifyConstituents(Constituent[] calldata newConstituents) external;
 

@@ -166,20 +166,20 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
         * @param constituentOut The token to exit
         * @param _in The amount of TTC to exit
         */
-    function singleExit(Constituent calldata constituentOut, uint256 _in) external _lock_ _positiveInput_(_in) {
-        uint256 alpha = div(_in, i_ttc.totalSupply());
-        uint256 oneSubAlpha = sub(ONE, alpha);
+    // function singleExit(Constituent calldata constituentOut, uint256 _in) external _lock_ _positiveInput_(_in) {
+    //     uint256 alpha = div(_in, i_ttc.totalSupply());
+    //     uint256 oneSubAlpha = sub(ONE, alpha);
 
-        uint256 power = 100 * ONE / constituentOut.norm;
-        uint256 poweredTerm = pow(oneSubAlpha, power);
+    //     uint256 power = 100 * ONE / constituentOut.norm;
+    //     uint256 poweredTerm = pow(oneSubAlpha, power);
 
-        uint256 balance = IERC20(constituentOut.token).balanceOf(address(this));
-        uint256 mulBalanceTerm = mul(balance, poweredTerm);
+    //     uint256 balance = IERC20(constituentOut.token).balanceOf(address(this));
+    //     uint256 mulBalanceTerm = mul(balance, poweredTerm);
 
-        uint256 amountOut = sub(balance, mulBalanceTerm);
+    //     uint256 amountOut = sub(balance, mulBalanceTerm);
 
-        _singleExit(constituentOut, amountOut, _in);
-    }
+    //     _singleExit(constituentOut, amountOut, _in);
+    // }
 
     /*
      * @notice single-token exit, takes an amount of token a user is willing to receive
@@ -198,15 +198,15 @@ contract TTCVault is ITTCVault, TTCMath, TTCFees, Ownable {
      * @param constituentOut The token to exit
      * @param _in The amount of TTC to exit
      */
-    function _singleExit(Constituent calldata constituentOut, uint256 amountOut, uint256 _in) internal _isLocked_ {
-        // for a single token exit, the fee is only charged on the amount of tokens that are beyond balance
-        uint256 amountOutSubFee = chargeBaseFeePlusMarginal(amountOut, constituentOut.norm);
+    // function _singleExit(Constituent calldata constituentOut, uint256 amountOut, uint256 _in) internal _isLocked_ {
+    //     // for a single token exit, the fee is only charged on the amount of tokens that are beyond balance
+    //     uint256 amountOutSubFee = chargeBaseFeePlusMarginal(amountOut, constituentOut.norm);
 
-        _pushToSender(constituentOut.token, amountOutSubFee);
-        i_ttc.burn(msg.sender, _in);
+    //     _pushToSender(constituentOut.token, amountOutSubFee);
+    //     i_ttc.burn(msg.sender, _in);
 
-        emit SINGLE_EXIT(msg.sender, constituentOut.token, _in, amountOutSubFee);
-    }
+    //     emit SINGLE_EXIT(msg.sender, constituentOut.token, _in, amountOutSubFee);
+    // }
 
     /*
      * @notice executes an all-tokens join
